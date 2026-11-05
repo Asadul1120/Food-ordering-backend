@@ -1,0 +1,27 @@
+model Product {
+  id         String @id @default(ulid())
+  categoryId String
+
+  name        String
+  slug        String  @unique
+  description String?
+
+  price Decimal @db.Decimal(10, 2)
+
+  imageUrl      String
+  imagePublicId String
+
+  isAvailable     Boolean @default(true)
+  isFeatured      Boolean @default(false)
+  preparationTime Int?
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  orderItems OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([categoryId])
+  @@map("products")
+}

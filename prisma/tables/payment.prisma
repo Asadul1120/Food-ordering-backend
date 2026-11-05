@@ -1,0 +1,38 @@
+model Payment {
+  id      String @id @default(ulid())
+  orderId String
+
+  amount Decimal @db.Decimal(10, 2)
+
+  paymentMethod PaymentMethod
+  paymentStatus PaymentStatus @default(PENDING)
+
+  transactionId   String? @unique
+  paymentProvider String?
+
+  paidAt DateTime?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Restrict)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([paymentStatus])
+  @@map("payments")
+}
+
+enum PaymentMethod {
+  CASH_ON_DELIVERY
+  BKASH
+  NAGAD
+  STRIPE
+  SSLCOMMERZ
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
