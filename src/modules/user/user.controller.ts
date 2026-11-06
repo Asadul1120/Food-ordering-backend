@@ -29,7 +29,21 @@ const GetUserById: RequestHandler = catchAsync(async (req, res) => {
   });
 });
 
+const UpdateUser: RequestHandler = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  const user = await userService.UpdateUser(id as string, req.body);
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "User updated successfully",
+    data: user,
+  });
+});
+
 export const userController = {
   GetAllUsers,
   GetUserById,
+  UpdateUser,
 };

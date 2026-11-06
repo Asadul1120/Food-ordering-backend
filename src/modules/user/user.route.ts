@@ -1,12 +1,13 @@
 import { Router } from "express";
-
 import { userController } from "./user.controller.ts";
-
 import { validateRequest } from "../../middleware/validateRequest.ts";
 import Auth from "../../middleware/Auth.ts";
-
-import { userQueryValidationSchema } from "./user.validation.ts";
 import { UserRole } from "../../generated/prisma/enums.ts";
+
+import {
+  updateUserValidationSchema,
+  userQueryValidationSchema,
+} from "./user.validation.ts";
 
 const router = Router();
 
@@ -18,5 +19,12 @@ router.get(
 );
 
 router.get("/:id", Auth(UserRole.ADMIN), userController.GetUserById);
+
+router.patch(
+  "/:id",
+  Auth(UserRole.ADMIN),
+  validateRequest(updateUserValidationSchema),
+  userController.UpdateUser,
+);
 
 export const userRoutes = router;
