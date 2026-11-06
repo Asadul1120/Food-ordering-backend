@@ -6,6 +6,7 @@ import { config } from "./config/index.ts";
 import { globalErrorHandler } from "./middleware/global-error-handler.js";
 import { notFound } from "./middleware/not-found.js";
 import { authRoutes } from "./modules/auth/auth.route.ts";
+import { userRoutes } from "./modules/user/user.route.ts";
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.get("/", (_req: Request, res: Response) => {
 
 //
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/users", userRoutes);
 
 
 app.use(notFound);
