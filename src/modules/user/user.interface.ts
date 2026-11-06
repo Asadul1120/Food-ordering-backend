@@ -13,3 +13,7 @@ export interface IUpdateUserInput {
   email?: string ;
   role?: UserRole;
 }
+
+export interface IUpdateUserStatusInput {
+  isActive: boolean;
+}

@@ -2,7 +2,11 @@ import { Prisma, UserRole } from "../../generated/prisma/client.ts";
 import { prisma } from "../../lib/prisma.ts";
 import { AppError } from "../../utils/AppError.ts";
 
-import type { IUpdateUserInput, IUserQuery } from "./user.interface.ts";
+import type {
+  IUpdateUserInput,
+  IUpdateUserStatusInput,
+  IUserQuery,
+} from "./user.interface.ts";
 
 const GetAllUsers = async (query: IUserQuery) => {
   const page = Number(query.page) || 1;
@@ -172,8 +176,44 @@ const UpdateUser = async (userId: string, payload: IUpdateUserInput) => {
   return user;
 };
 
+const UpdateUserStatus = async (
+  userId: string,
+  payload: IUpdateUserStatusInput,
+) => {
+  const existingUser = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+  });
+
+  if (!existingUser) {
+    throw new AppError(404, "User not found");
+  }
+
+  const user = await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      isActive: payload.isActive,
+    },
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      email: true,
+      role: true,
+      isActive: true,
+      updatedAt: true,
+    },
+  });
+
+  return user;
+};
+
 export const userService = {
   GetAllUsers,
   GetUserById,
   UpdateUser,
+  UpdateUserStatus,
 };

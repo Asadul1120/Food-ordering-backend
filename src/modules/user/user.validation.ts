@@ -22,7 +22,6 @@ export const userQueryValidationSchema = z.object({
   role: z.enum(["ADMIN", "STAFF", "CUSTOMER"]).optional(),
 });
 
-
 import { UserRole } from "../../generated/prisma/enums.ts";
 
 export const updateUserValidationSchema = z
@@ -52,3 +51,7 @@ export const updateUserValidationSchema = z
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field is required to update",
   });
+
+export const updateUserStatusValidationSchema = z.object({
+  isActive: z.boolean(),
+});

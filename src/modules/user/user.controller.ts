@@ -42,8 +42,22 @@ const UpdateUser: RequestHandler = catchAsync(async (req, res) => {
   });
 });
 
+const UpdateUserStatus: RequestHandler = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  const user = await userService.UpdateUserStatus(id as string, req.body);
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "User status updated successfully",
+    data: user,
+  });
+});
+
 export const userController = {
   GetAllUsers,
   GetUserById,
   UpdateUser,
+  UpdateUserStatus,
 };

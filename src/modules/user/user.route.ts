@@ -5,6 +5,7 @@ import Auth from "../../middleware/Auth.ts";
 import { UserRole } from "../../generated/prisma/enums.ts";
 
 import {
+  updateUserStatusValidationSchema,
   updateUserValidationSchema,
   userQueryValidationSchema,
 } from "./user.validation.ts";
@@ -25,6 +26,13 @@ router.patch(
   Auth(UserRole.ADMIN),
   validateRequest(updateUserValidationSchema),
   userController.UpdateUser,
+);
+
+router.patch(
+  "/:id/status",
+  Auth(UserRole.ADMIN),
+  validateRequest(updateUserStatusValidationSchema),
+  userController.UpdateUserStatus,
 );
 
 export const userRoutes = router;
