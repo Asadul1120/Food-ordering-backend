@@ -5,6 +5,8 @@ import Auth from "../../middleware/Auth.ts";
 import { UserRole } from "../../generated/prisma/enums.ts";
 
 import {
+  changePasswordValidationSchema,
+  updateMyProfileValidationSchema,
   updateUserStatusValidationSchema,
   updateUserValidationSchema,
   userQueryValidationSchema,
@@ -17,6 +19,20 @@ router.get(
   Auth(UserRole.ADMIN),
   validateRequest(userQueryValidationSchema),
   userController.GetAllUsers,
+);
+
+router.patch(
+  "/me",
+  Auth(),
+  validateRequest(updateMyProfileValidationSchema),
+  userController.UpdateMyProfile,
+);
+
+router.patch(
+  "/me/change-password",
+  Auth(),
+  validateRequest(changePasswordValidationSchema),
+  userController.ChangeMyPassword,
 );
 
 router.get("/:id", Auth(UserRole.ADMIN), userController.GetUserById);

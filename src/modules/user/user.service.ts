@@ -1,8 +1,11 @@
 import { Prisma, UserRole } from "../../generated/prisma/client.ts";
 import { prisma } from "../../lib/prisma.ts";
 import { AppError } from "../../utils/AppError.ts";
+import { comparePassword, hashPassword } from "../../utils/password.ts";
 
 import type {
+  IChangePasswordInput,
+  IUpdateMyProfileInput,
   IUpdateUserInput,
   IUpdateUserStatusInput,
   IUserQuery,
@@ -211,9 +214,117 @@ const UpdateUserStatus = async (
   return user;
 };
 
+const UpdateMyProfile = async (
+  userId: string,
+  payload: IUpdateMyProfileInput,
+) => {
+  const existingUser = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+  });
+
+  if (!existingUser) {
+    throw new AppError(404, "User not found");
+  }
+
+  if (payload.phone && payload.phone !== existingUser.phone) {
+    const existingPhone = await prisma.user.findUnique({
+      where: {
+        phone: payload.phone,
+      },
+    });
+
+    if (existingPhone) {
+      throw new AppError(409, "Phone number already exists");
+    }
+  }
+
+  const user = await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      ...(payload.name !== undefined && {
+        name: payload.name,
+      }),
+
+      ...(payload.phone !== undefined && {
+        phone: payload.phone,
+      }),
+    },
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      email: true,
+      role: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return user;
+};
+
+const ChangeMyPassword = async (
+  userId: string,
+  payload: IChangePasswordInput,
+) => {
+  const { currentPassword, newPassword } = payload;
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+  });
+
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
+
+  if (!user.isActive) {
+    throw new AppError(403, "Your account is disabled");
+  }
+
+  const isPasswordMatched = await comparePassword(
+    currentPassword,
+    user.password,
+  );
+
+  if (!isPasswordMatched) {
+    throw new AppError(401, "Current password is incorrect");
+  }
+
+  const isSamePassword = await comparePassword(newPassword, user.password);
+
+  if (isSamePassword) {
+    throw new AppError(
+      400,
+      "New password must be different from current password",
+    );
+  }
+
+  const hashedPassword = await hashPassword(newPassword);
+
+  await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      password: hashedPassword,
+    },
+  });
+
+  return true;
+};
+
 export const userService = {
   GetAllUsers,
   GetUserById,
   UpdateUser,
   UpdateUserStatus,
+  UpdateMyProfile,
+  ChangeMyPassword,
 };
