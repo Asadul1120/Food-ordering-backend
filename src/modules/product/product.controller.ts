@@ -36,7 +36,21 @@ const GetAllProducts: RequestHandler = catchAsync(async (req, res) => {
   });
 });
 
+const GetProductById: RequestHandler = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  const product = await productService.GetProductById(id as string);
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Product retrieved successfully",
+    data: product,
+  });
+});
+
 export const productController = {
   CreateProduct,
   GetAllProducts,
+  GetProductById,
 };

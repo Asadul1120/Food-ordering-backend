@@ -1,7 +1,5 @@
 import { prisma } from "../../lib/prisma.ts";
-
 import { AppError } from "../../utils/AppError.ts";
-
 import {
   uploadToCloudinary,
   deleteFromCloudinary,
@@ -230,7 +228,48 @@ const GetAllProducts = async (query: IProductQuery) => {
   };
 };
 
+
+const GetProductById = async (productId: string) => {
+  const product = await prisma.product.findFirst({
+    where: {
+      id: productId,
+      isAvailable: true,
+      category: {
+        isActive: true,
+      },
+    },
+    select: {
+      id: true,
+      categoryId: true,
+      name: true,
+      slug: true,
+      description: true,
+      price: true,
+      imageUrl: true,
+      isAvailable: true,
+      isFeatured: true,
+      preparationTime: true,
+      createdAt: true,
+      updatedAt: true,
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+    },
+  });
+
+  if (!product) {
+    throw new AppError(404, "Product not found");
+  }
+
+  return product;
+};
+
 export const productService = {
   CreateProduct,
   GetAllProducts,
+  GetProductById,
 };

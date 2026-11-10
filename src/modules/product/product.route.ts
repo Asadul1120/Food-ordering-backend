@@ -18,4 +18,6 @@ router.post(
 
 router.get("/", productController.GetAllProducts);
 
+router.get("/:id", productController.GetProductById);
+
 export const productRoutes = router;
