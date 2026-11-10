@@ -6,3 +6,15 @@ export interface ICreateProductInput {
   price: string;
   preparationTime?: number;
 }
+
+
+export interface IProductQuery {
+  page: number;
+  limit: number;
+  search?: string;
+  categoryId?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sortBy: "createdAt" | "price" | "name";
+  sortOrder: "asc" | "desc";
+}

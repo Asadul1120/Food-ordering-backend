@@ -6,8 +6,6 @@ import { validateRequest } from "../../middleware/validateRequest.ts";
 import { createProductValidationSchema } from "./product.validation.ts";
 import { uploadProductImage } from "../../middleware/upload.ts";
 
-
-
 const router = Router();
 
 router.post(
@@ -17,5 +15,7 @@ router.post(
   validateRequest(createProductValidationSchema),
   productController.CreateProduct,
 );
+
+router.get("/", productController.GetAllProducts);
 
 export const productRoutes = router;

@@ -9,19 +9,14 @@ import {
 
 import type {
   ICreateProductInput,
+  IProductQuery,
 } from "./product.interface.ts";
 
 const CreateProduct = async (
   payload: ICreateProductInput,
   file?: Express.Multer.File,
 ) => {
-  const {
-    categoryId,
-    name,
-    description,
-    price,
-    preparationTime,
-  } = payload;
+  const { categoryId, name, description, price, preparationTime } = payload;
 
   if (!file) {
     throw new AppError(400, "Product image is required");
@@ -49,10 +44,7 @@ const CreateProduct = async (
       .replace(/^-|-$/g, "");
 
   if (!slug) {
-    throw new AppError(
-      400,
-      "Please provide a valid English product slug",
-    );
+    throw new AppError(400, "Please provide a valid English product slug");
   }
 
   const existingSlug = await prisma.product.findUnique({
@@ -106,9 +98,7 @@ const CreateProduct = async (
 
     return product;
   } catch (error) {
-    await deleteFromCloudinary(
-      uploadedImage.public_id,
-    ).catch((deleteError) => {
+    await deleteFromCloudinary(uploadedImage.public_id).catch((deleteError) => {
       console.error("Product image cleanup failed:", deleteError);
     });
 
@@ -125,6 +115,122 @@ const CreateProduct = async (
   }
 };
 
+const GetAllProducts = async (query: IProductQuery) => {
+  const {
+    page,
+    limit,
+    search,
+    categoryId,
+    minPrice,
+    maxPrice,
+    sortBy,
+    sortOrder,
+  } = query;
+
+  const skip = (page - 1) * limit;
+
+  const priceFilter = {
+    ...(minPrice !== undefined && {
+      gte: minPrice,
+    }),
+
+    ...(maxPrice !== undefined && {
+      lte: maxPrice,
+    }),
+  };
+
+  const where = {
+    isAvailable: true,
+
+    category: {
+      isActive: true,
+    },
+
+    ...(categoryId && {
+      categoryId,
+    }),
+
+    ...(search && {
+      OR: [
+        {
+          name: {
+            contains: search,
+            mode: "insensitive" as const,
+          },
+        },
+        {
+          slug: {
+            contains: search,
+            mode: "insensitive" as const,
+          },
+        },
+        {
+          description: {
+            contains: search,
+            mode: "insensitive" as const,
+          },
+        },
+      ],
+    }),
+
+    ...(Object.keys(priceFilter).length > 0 && {
+      price: priceFilter,
+    }),
+  };
+
+  const orderBy =
+    sortBy === "price"
+      ? { price: sortOrder }
+      : sortBy === "name"
+        ? { name: sortOrder }
+        : { createdAt: sortOrder };
+
+  const [products, totalProducts] = await prisma.$transaction([
+    prisma.product.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy,
+      select: {
+        id: true,
+        categoryId: true,
+        name: true,
+        slug: true,
+        description: true,
+        price: true,
+        imageUrl: true,
+        isAvailable: true,
+        isFeatured: true,
+        preparationTime: true,
+        createdAt: true,
+        updatedAt: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    }),
+
+    prisma.product.count({
+      where,
+    }),
+  ]);
+
+  return {
+    products,
+    pagination: {
+      totalProducts,
+      currentPage: page,
+      totalPages: Math.ceil(totalProducts / limit),
+      limit,
+    },
+  };
+};
+
 export const productService = {
   CreateProduct,
+  GetAllProducts,
 };
