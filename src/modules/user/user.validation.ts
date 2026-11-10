@@ -55,3 +55,40 @@ export const updateUserValidationSchema = z
 export const updateUserStatusValidationSchema = z.object({
   isActive: z.boolean(),
 });
+
+export const updateMyProfileValidationSchema = z
+  .object({
+    name: z
+      .string()
+      .trim()
+      .min(2, "Name must be at least 2 characters")
+      .max(80, "Name cannot exceed 80 characters")
+      .optional(),
+
+    phone: z
+      .string()
+      .trim()
+      .regex(/^\+?[0-9]{8,15}$/, "Invalid phone number")
+      .optional(),
+  })
+  .strict()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "At least one field is required to update",
+  });
+
+export const changePasswordValidationSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Current password is required"),
+
+    newPassword: z
+      .string()
+      .min(8, "Password must be at least 8 characters")
+      .max(72, "Password cannot exceed 72 characters"),
+
+    confirmPassword: z.string().min(1, "Confirm password is required"),
+  })
+  .strict()
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "New password and confirm password do not match",
+    path: ["confirmPassword"],
+  });

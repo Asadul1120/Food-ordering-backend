@@ -10,10 +10,21 @@ export interface IUserQuery {
 export interface IUpdateUserInput {
   name?: string;
   phone?: string;
-  email?: string ;
+  email?: string;
   role?: UserRole;
 }
 
 export interface IUpdateUserStatusInput {
   isActive: boolean;
+}
+
+export interface IUpdateMyProfileInput {
+  name?: string;
+  phone?: string;
+}
+
+export interface IChangePasswordInput {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
 }
