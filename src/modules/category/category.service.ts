@@ -4,7 +4,7 @@ import {
   deleteFromCloudinary,
   uploadToCloudinary,
 } from "../../utils/cloudinary.ts";
-import { ICreateCategoryInput } from "./category.interface.ts";
+import { ICreateCategoryInput, IUpdateCategoryInput } from "./category.interface.ts";
 
 const CreateCategory = async (
   payload: ICreateCategoryInput,
@@ -130,8 +130,132 @@ const GetCategoryById = async (categoryId: string) => {
   return category;
 };
 
+const UpdateCategory = async (
+  categoryId: string,
+  payload: IUpdateCategoryInput,
+  file?: Express.Multer.File,
+) => {
+  const existingCategory = await prisma.category.findUnique({
+    where: {
+      id: categoryId,
+    },
+  });
+
+  if (!existingCategory) {
+    throw new AppError(404, "Category not found");
+  }
+
+  if (Object.keys(payload).length === 0 && !file) {
+    throw new AppError(400, "At least one field or image is required");
+  }
+
+  let slug = payload.slug;
+
+  if (payload.name && !payload.slug) {
+    const generatedSlug = payload.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    if (generatedSlug) {
+      slug = generatedSlug;
+    }
+  }
+
+  if (payload.name && payload.name !== existingCategory.name) {
+    const existingName = await prisma.category.findUnique({
+      where: {
+        name: payload.name,
+      },
+    });
+
+    if (existingName) {
+      throw new AppError(409, "Category name already exists");
+    }
+  }
+
+  if (slug && slug !== existingCategory.slug) {
+    const existingSlug = await prisma.category.findUnique({
+      where: {
+        slug,
+      },
+    });
+
+    if (existingSlug) {
+      throw new AppError(409, "Category slug already exists");
+    }
+  }
+
+  let uploadedImage;
+
+  if (file) {
+    uploadedImage = await uploadToCloudinary(file, "food-ordering/categories");
+  }
+
+  try {
+    const category = await prisma.category.update({
+      where: {
+        id: categoryId,
+      },
+      data: {
+        ...(payload.name !== undefined && {
+          name: payload.name,
+        }),
+
+        ...(slug !== undefined && {
+          slug,
+        }),
+
+        ...(payload.description !== undefined && {
+          description: payload.description || null,
+        }),
+
+        ...(uploadedImage && {
+          imageUrl: uploadedImage.secure_url,
+          imagePublicId: uploadedImage.public_id,
+        }),
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        imageUrl: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    if (
+      uploadedImage &&
+      existingCategory.imagePublicId &&
+      existingCategory.imagePublicId !== uploadedImage.public_id
+    ) {
+      await deleteFromCloudinary(existingCategory.imagePublicId).catch(
+        (error) => {
+          console.error("Old category image deletion failed:", error);
+        },
+      );
+    }
+
+    return category;
+  } catch (error) {
+    if (uploadedImage?.public_id) {
+      await deleteFromCloudinary(uploadedImage.public_id).catch(
+        (deleteError) => {
+          console.error("New category image cleanup failed:", deleteError);
+        },
+      );
+    }
+
+    throw error;
+  }
+};
+
 export const categoryService = {
   CreateCategory,
   GetAllCategories,
   GetCategoryById,
+  UpdateCategory,
 };

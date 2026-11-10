@@ -38,8 +38,22 @@ const GetCategoryById: RequestHandler = catchAsync(async (req, res) => {
   });
 });
 
+const UpdateCategory: RequestHandler = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  const category = await categoryService.UpdateCategory(id as string, req.body, req.file);
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Category updated successfully",
+    data: category,
+  });
+});
+
 export const categoryController = {
   CreateCategory,
   GetAllCategories,
   GetCategoryById,
+  UpdateCategory,
 };
