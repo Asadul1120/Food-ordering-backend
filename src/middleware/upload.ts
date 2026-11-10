@@ -36,3 +36,5 @@ export const uploadCategoryImage = (
     next();
   });
 };
+
+export const uploadProductImage = uploadCategoryImage;
