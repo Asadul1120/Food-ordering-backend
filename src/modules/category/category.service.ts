@@ -4,7 +4,10 @@ import {
   deleteFromCloudinary,
   uploadToCloudinary,
 } from "../../utils/cloudinary.ts";
-import { ICreateCategoryInput, IUpdateCategoryInput } from "./category.interface.ts";
+import {
+  ICreateCategoryInput,
+  IUpdateCategoryInput,
+} from "./category.interface.ts";
 
 const CreateCategory = async (
   payload: ICreateCategoryInput,
@@ -253,9 +256,74 @@ const UpdateCategory = async (
   }
 };
 
+const DeleteCategory = async (categoryId: string) => {
+  const existingCategory = await prisma.category.findUnique({
+    where: {
+      id: categoryId,
+    },
+    select: {
+      id: true,
+      name: true,
+      imagePublicId: true,
+      _count: {
+        select: {
+          products: true,
+        },
+      },
+    },
+  });
+
+  if (!existingCategory) {
+    throw new AppError(404, "Category not found");
+  }
+
+  if (existingCategory._count.products > 0) {
+    throw new AppError(
+      409,
+      "Cannot delete category because products are associated with it",
+    );
+  }
+
+  try {
+    await prisma.category.delete({
+      where: {
+        id: categoryId,
+      },
+    });
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "P2003"
+    ) {
+      throw new AppError(
+        409,
+        "Cannot delete category because products are associated with it",
+      );
+    }
+
+    throw error;
+  }
+
+  if (existingCategory.imagePublicId) {
+    await deleteFromCloudinary(existingCategory.imagePublicId).catch(
+      (error) => {
+        console.error("Category image deletion failed:", error);
+      },
+    );
+  }
+
+  return {
+    id: existingCategory.id,
+    name: existingCategory.name,
+  };
+};
+
 export const categoryService = {
   CreateCategory,
   GetAllCategories,
   GetCategoryById,
   UpdateCategory,
+  DeleteCategory,
 };

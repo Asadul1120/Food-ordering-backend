@@ -41,7 +41,11 @@ const GetCategoryById: RequestHandler = catchAsync(async (req, res) => {
 const UpdateCategory: RequestHandler = catchAsync(async (req, res) => {
   const { id } = req.params;
 
-  const category = await categoryService.UpdateCategory(id as string, req.body, req.file);
+  const category = await categoryService.UpdateCategory(
+    id as string,
+    req.body,
+    req.file,
+  );
 
   apiResponse(res, {
     statusCode: 200,
@@ -51,9 +55,23 @@ const UpdateCategory: RequestHandler = catchAsync(async (req, res) => {
   });
 });
 
+const DeleteCategory: RequestHandler = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  const category = await categoryService.DeleteCategory(id as string);
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Category deleted successfully",
+    data: category,
+  });
+});
+
 export const categoryController = {
   CreateCategory,
   GetAllCategories,
   GetCategoryById,
   UpdateCategory,
+  DeleteCategory,
 };

@@ -4,7 +4,10 @@ import Auth from "../../middleware/Auth.ts";
 import { UserRole } from "../../generated/prisma/enums.ts";
 import { uploadCategoryImage } from "../../middleware/upload.ts";
 import { validateRequest } from "../../middleware/validateRequest.ts";
-import { createCategoryValidationSchema, updateCategoryValidationSchema } from "./category.validation.ts";
+import {
+  createCategoryValidationSchema,
+  updateCategoryValidationSchema,
+} from "./category.validation.ts";
 
 const router = Router();
 
@@ -27,5 +30,7 @@ router.patch(
   validateRequest(updateCategoryValidationSchema),
   categoryController.UpdateCategory,
 );
+
+router.delete("/:id", Auth(UserRole.ADMIN), categoryController.DeleteCategory);
 
 export const categoryRoutes = router;
