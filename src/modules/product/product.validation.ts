@@ -182,3 +182,9 @@ export const updateProductAvailabilityValidationSchema = z
   })
   .strict();
 
+
+  export const updateProductFeaturedValidationSchema = z
+  .object({
+    isFeatured: z.boolean(),
+  })
+  .strict();

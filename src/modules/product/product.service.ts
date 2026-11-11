@@ -10,6 +10,7 @@ import type {
   IProductCategoryQuery,
   IProductQuery,
   IUpdateProductAvailabilityInput,
+  IUpdateProductFeaturedInput,
   IUpdateProductInput,
 } from "./product.interface.ts";
 
@@ -526,6 +527,40 @@ const UpdateProductAvailability = async (
   return product;
 };
 
+const UpdateProductFeatured = async (
+  productId: string,
+  payload: IUpdateProductFeaturedInput,
+) => {
+  const existingProduct = await prisma.product.findUnique({
+    where: {
+      id: productId,
+    },
+  });
+
+  if (!existingProduct) {
+    throw new AppError(404, "Product not found");
+  }
+
+  const product = await prisma.product.update({
+    where: {
+      id: productId,
+    },
+    data: {
+      isFeatured: payload.isFeatured,
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      isAvailable: true,
+      isFeatured: true,
+      updatedAt: true,
+    },
+  });
+
+  return product;
+};
+
 export const productService = {
   CreateProduct,
   GetAllProducts,
@@ -534,4 +569,5 @@ export const productService = {
   GetProductsByCategory,
   UpdateProduct,
   UpdateProductAvailability,
+  UpdateProductFeatured,
 };

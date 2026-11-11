@@ -6,6 +6,7 @@ import { validateRequest } from "../../middleware/validateRequest.ts";
 import {
   createProductValidationSchema,
   updateProductAvailabilityValidationSchema,
+  updateProductFeaturedValidationSchema,
   updateProductValidationSchema,
 } from "./product.validation.ts";
 import { uploadProductImage } from "../../middleware/upload.ts";
@@ -41,6 +42,13 @@ router.patch(
   Auth(UserRole.ADMIN, UserRole.STAFF),
   validateRequest(updateProductAvailabilityValidationSchema),
   productController.UpdateProductAvailability,
+);
+
+router.patch(
+  "/:id/featured",
+  Auth(UserRole.ADMIN),
+  validateRequest(updateProductFeaturedValidationSchema),
+  productController.UpdateProductFeatured,
 );
 
 export const productRoutes = router;

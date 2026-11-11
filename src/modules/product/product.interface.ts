@@ -32,3 +32,6 @@ export interface IUpdateProductInput {
 export interface IUpdateProductAvailabilityInput {
   isAvailable: boolean;
 }
+export interface IUpdateProductFeaturedInput {
+  isFeatured: boolean;
+}

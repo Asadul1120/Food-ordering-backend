@@ -123,7 +123,18 @@ const UpdateProductAvailability: RequestHandler = catchAsync(
   },
 );
 
+const UpdateProductFeatured: RequestHandler = catchAsync(async (req, res) => {
+  const { id } = req.params;
 
+  const product = await productService.UpdateProductFeatured(id as string, req.body);
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Product featured status updated successfully",
+    data: product,
+  });
+});
 
 export const productController = {
   CreateProduct,
@@ -133,4 +144,5 @@ export const productController = {
   GetProductsByCategory,
   UpdateProduct,
   UpdateProductAvailability,
+  UpdateProductFeatured,
 };
