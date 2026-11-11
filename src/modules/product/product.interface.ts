@@ -7,7 +7,6 @@ export interface ICreateProductInput {
   preparationTime?: number;
 }
 
-
 export interface IProductQuery {
   page: number;
   limit: number;
@@ -18,3 +17,5 @@ export interface IProductQuery {
   sortBy: "createdAt" | "price" | "name";
   sortOrder: "asc" | "desc";
 }
+
+export type IProductCategoryQuery = Omit<IProductQuery, "categoryId">;

@@ -20,6 +20,8 @@ router.get("/", productController.GetAllProducts);
 
 router.get("/featured", productController.GetFeaturedProducts);
 
+router.get("/category/:categoryId", productController.GetProductsByCategory);
+
 router.get("/:id", productController.GetProductById);
 
 export const productRoutes = router;

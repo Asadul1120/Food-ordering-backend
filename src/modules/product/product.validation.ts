@@ -76,3 +76,77 @@ export const productQueryValidationSchema = z
       path: ["maxPrice"],
     },
   );
+
+  const productQueryFieldsSchema = z.object({
+  page: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(1),
+
+  limit: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .default(10),
+
+  search: z
+    .string()
+    .trim()
+    .optional(),
+
+  categoryId: z
+    .string()
+    .optional(),
+
+  minPrice: z.coerce
+    .number()
+    .nonnegative()
+    .optional(),
+
+  maxPrice: z.coerce
+    .number()
+    .nonnegative()
+    .optional(),
+
+  sortBy: z
+    .enum(["createdAt", "price", "name"])
+    .default("createdAt"),
+
+  sortOrder: z
+    .enum(["asc", "desc"])
+    .default("desc"),
+});
+
+// Get All Products Validation
+// export const productQueryValidationSchema = productQueryFieldsSchema
+//   .strict()
+//   .refine(
+//     (data) =>
+//       data.minPrice === undefined ||
+//       data.maxPrice === undefined ||
+//       data.minPrice <= data.maxPrice,
+//     {
+//       message: "Minimum price cannot be greater than maximum price",
+//       path: ["maxPrice"],
+//     },
+//   );
+
+// Get Products By Category Validation
+export const productCategoryQueryValidationSchema =
+  productQueryFieldsSchema
+    .omit({
+      categoryId: true,
+    })
+    .strict()
+    .refine(
+      (data) =>
+        data.minPrice === undefined ||
+        data.maxPrice === undefined ||
+        data.minPrice <= data.maxPrice,
+      {
+        message: "Minimum price cannot be greater than maximum price",
+        path: ["maxPrice"],
+      },
+    );

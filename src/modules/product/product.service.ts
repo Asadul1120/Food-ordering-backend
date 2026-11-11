@@ -7,6 +7,7 @@ import {
 
 import type {
   ICreateProductInput,
+  IProductCategoryQuery,
   IProductQuery,
 } from "./product.interface.ts";
 
@@ -304,9 +305,37 @@ const GetFeaturedProducts = async () => {
 
   return products;
 };
+
+const GetProductsByCategory = async (
+  categoryId: string,
+  query: IProductCategoryQuery,
+) => {
+  const category = await prisma.category.findFirst({
+    where: {
+      id: categoryId,
+      isActive: true,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!category) {
+    throw new AppError(404, "Category not found");
+  }
+
+  const result = await GetAllProducts({
+    ...query,
+    categoryId,
+  });
+
+  return result;
+};
+
 export const productService = {
   CreateProduct,
   GetAllProducts,
   GetProductById,
   GetFeaturedProducts,
+  GetProductsByCategory,
 };
