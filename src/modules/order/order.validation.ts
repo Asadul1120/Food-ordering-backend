@@ -71,3 +71,13 @@ export const orderQueryValidationSchema = z
     orderStatus: z.nativeEnum(OrderStatus).optional(),
   })
   .strict();
+
+export const myOrdersQueryValidationSchema = z
+  .object({
+    page: z.coerce.number().int().positive().default(1),
+
+    limit: z.coerce.number().int().min(1).max(100).default(10),
+
+    orderStatus: z.nativeEnum(OrderStatus).optional(),
+  })
+  .strict();

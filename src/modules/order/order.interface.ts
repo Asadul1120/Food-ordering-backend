@@ -27,3 +27,10 @@ export interface IOrderQuery {
   search?: string;
   orderStatus?: OrderStatus;
 }
+
+
+export interface IMyOrdersQuery {
+  page: number;
+  limit: number;
+  orderStatus?: OrderStatus;
+}

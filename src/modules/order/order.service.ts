@@ -4,7 +4,11 @@ import type { Prisma } from "../../generated/prisma/client.ts";
 
 import { AppError } from "../../utils/AppError.ts";
 import { PaymentStatus, DiscountType } from "../../generated/prisma/enums.ts";
-import type { ICreateOrderInput, IOrderQuery } from "./order.interface.ts";
+import type {
+  ICreateOrderInput,
+  IMyOrdersQuery,
+  IOrderQuery,
+} from "./order.interface.ts";
 
 const toCents = (value: string) => {
   const [whole, fraction = ""] = value.split(".");
@@ -409,8 +413,83 @@ const GetOrderById = async (orderId: string) => {
   return order;
 };
 
+const GetMyOrders = async (userId: string, query: IMyOrdersQuery) => {
+  const { page, limit, orderStatus } = query;
+
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.OrderWhereInput = {
+    userId,
+
+    ...(orderStatus && {
+      orderStatus,
+    }),
+  };
+
+  const [orders, totalOrders] = await prisma.$transaction([
+    prisma.order.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        orderNumber: true,
+        customerName: true,
+        customerPhone: true,
+        deliveryAddress: true,
+        subtotal: true,
+        discountAmount: true,
+        deliveryCharge: true,
+        totalAmount: true,
+        orderStatus: true,
+        createdAt: true,
+        updatedAt: true,
+
+        orderItems: {
+          select: {
+            id: true,
+            productId: true,
+            productName: true,
+            productPrice: true,
+            quantity: true,
+            subtotal: true,
+          },
+        },
+
+        payments: {
+          select: {
+            id: true,
+            amount: true,
+            paymentMethod: true,
+            paymentStatus: true,
+            paidAt: true,
+            createdAt: true,
+          },
+        },
+      },
+    }),
+
+    prisma.order.count({
+      where,
+    }),
+  ]);
+
+  return {
+    orders,
+    pagination: {
+      totalOrders,
+      currentPage: page,
+      totalPages: Math.ceil(totalOrders / limit),
+      limit,
+    },
+  };
+};
 export const orderService = {
   CreateOrder,
   GetAllOrders,
   GetOrderById,
+  GetMyOrders,
 };

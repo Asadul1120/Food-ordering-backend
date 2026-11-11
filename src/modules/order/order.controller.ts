@@ -2,7 +2,10 @@ import type { RequestHandler } from "express";
 import { catchAsync } from "../../utils/catchAsync.ts";
 import apiResponse from "../../utils/apiResponse.ts";
 import { orderService } from "./order.service.ts";
-import { orderQueryValidationSchema } from "./order.validation.ts";
+import {
+  myOrdersQueryValidationSchema,
+  orderQueryValidationSchema,
+} from "./order.validation.ts";
 import { AppError } from "../../utils/AppError.ts";
 
 const CreateOrder: RequestHandler = catchAsync(async (req, res) => {
@@ -49,8 +52,35 @@ const GetOrderById: RequestHandler = catchAsync(async (req, res) => {
   });
 });
 
+const GetMyOrders: RequestHandler = catchAsync(async (req, res) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    throw new AppError(401, "Please login first");
+  }
+
+  const result = myOrdersQueryValidationSchema.safeParse(req.query);
+
+  if (!result.success) {
+    throw new AppError(
+      400,
+      result.error.issues[0]?.message ?? "Invalid query parameters",
+    );
+  }
+
+  const orders = await orderService.GetMyOrders(userId, result.data);
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Your orders retrieved successfully",
+    data: orders,
+  });
+});
+
 export const orderController = {
   CreateOrder,
   GetAllOrders,
   GetOrderById,
+  GetMyOrders,
 };

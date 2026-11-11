@@ -21,10 +21,14 @@ router.get(
   orderController.GetAllOrders,
 );
 
+router.get("/my-orders", Auth(UserRole.CUSTOMER), orderController.GetMyOrders);
+
+
 router.get(
   "/:id",
   Auth(UserRole.ADMIN, UserRole.STAFF),
   orderController.GetOrderById,
 );
+
 
 export const orderRoutes = router;
