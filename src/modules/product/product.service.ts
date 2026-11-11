@@ -561,6 +561,68 @@ const UpdateProductFeatured = async (
   return product;
 };
 
+const DeleteProduct = async (productId: string) => {
+  const existingProduct = await prisma.product.findUnique({
+    where: {
+      id: productId,
+    },
+    select: {
+      id: true,
+      name: true,
+      imagePublicId: true,
+      _count: {
+        select: {
+          orderItems: true,
+        },
+      },
+    },
+  });
+
+  if (!existingProduct) {
+    throw new AppError(404, "Product not found");
+  }
+
+  if (existingProduct._count.orderItems > 0) {
+    throw new AppError(
+      409,
+      "Cannot delete product because it is associated with orders",
+    );
+  }
+
+  try {
+    await prisma.product.delete({
+      where: {
+        id: productId,
+      },
+    });
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "P2003"
+    ) {
+      throw new AppError(
+        409,
+        "Cannot delete product because it is associated with orders",
+      );
+    }
+
+    throw error;
+  }
+
+  if (existingProduct.imagePublicId) {
+    await deleteFromCloudinary(existingProduct.imagePublicId).catch((error) => {
+      console.error("Product image deletion failed:", error);
+    });
+  }
+
+  return {
+    id: existingProduct.id,
+    name: existingProduct.name,
+  };
+};
+
 export const productService = {
   CreateProduct,
   GetAllProducts,
@@ -570,4 +632,5 @@ export const productService = {
   UpdateProduct,
   UpdateProductAvailability,
   UpdateProductFeatured,
+  DeleteProduct,
 };

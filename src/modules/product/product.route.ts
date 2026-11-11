@@ -51,4 +51,6 @@ router.patch(
   productController.UpdateProductFeatured,
 );
 
+router.delete("/:id", Auth(UserRole.ADMIN), productController.DeleteProduct);
+
 export const productRoutes = router;

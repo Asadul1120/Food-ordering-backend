@@ -126,12 +126,28 @@ const UpdateProductAvailability: RequestHandler = catchAsync(
 const UpdateProductFeatured: RequestHandler = catchAsync(async (req, res) => {
   const { id } = req.params;
 
-  const product = await productService.UpdateProductFeatured(id as string, req.body);
+  const product = await productService.UpdateProductFeatured(
+    id as string,
+    req.body,
+  );
 
   apiResponse(res, {
     statusCode: 200,
     success: true,
     message: "Product featured status updated successfully",
+    data: product,
+  });
+});
+
+const DeleteProduct: RequestHandler = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  const product = await productService.DeleteProduct(id as string);
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Product deleted successfully",
     data: product,
   });
 });
@@ -145,4 +161,5 @@ export const productController = {
   UpdateProduct,
   UpdateProductAvailability,
   UpdateProductFeatured,
+  DeleteProduct,
 };
