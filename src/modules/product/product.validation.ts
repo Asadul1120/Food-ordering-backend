@@ -175,3 +175,10 @@ export const updateProductValidationSchema = z
     ),
   })
   .strict();
+
+export const updateProductAvailabilityValidationSchema = z
+  .object({
+    isAvailable: z.boolean(),
+  })
+  .strict();
+

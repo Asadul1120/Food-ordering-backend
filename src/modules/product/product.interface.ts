@@ -28,3 +28,7 @@ export interface IUpdateProductInput {
   price?: string;
   preparationTime?: number | null;
 }
+
+export interface IUpdateProductAvailabilityInput {
+  isAvailable: boolean;
+}

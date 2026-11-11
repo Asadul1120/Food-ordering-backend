@@ -5,6 +5,7 @@ import { UserRole } from "../../generated/prisma/enums.ts";
 import { validateRequest } from "../../middleware/validateRequest.ts";
 import {
   createProductValidationSchema,
+  updateProductAvailabilityValidationSchema,
   updateProductValidationSchema,
 } from "./product.validation.ts";
 import { uploadProductImage } from "../../middleware/upload.ts";
@@ -34,5 +35,12 @@ router.patch(
 );
 
 router.get("/:id", productController.GetProductById);
+
+router.patch(
+  "/:id/availability",
+  Auth(UserRole.ADMIN, UserRole.STAFF),
+  validateRequest(updateProductAvailabilityValidationSchema),
+  productController.UpdateProductAvailability,
+);
 
 export const productRoutes = router;
