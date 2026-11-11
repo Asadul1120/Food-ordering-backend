@@ -228,7 +228,6 @@ const GetAllProducts = async (query: IProductQuery) => {
   };
 };
 
-
 const GetProductById = async (productId: string) => {
   const product = await prisma.product.findFirst({
     where: {
@@ -268,8 +267,46 @@ const GetProductById = async (productId: string) => {
   return product;
 };
 
+const GetFeaturedProducts = async () => {
+  const products = await prisma.product.findMany({
+    where: {
+      isFeatured: true,
+      isAvailable: true,
+      category: {
+        isActive: true,
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    select: {
+      id: true,
+      categoryId: true,
+      name: true,
+      slug: true,
+      description: true,
+      price: true,
+      imageUrl: true,
+      isAvailable: true,
+      isFeatured: true,
+      preparationTime: true,
+      createdAt: true,
+      updatedAt: true,
+      category: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+    },
+  });
+
+  return products;
+};
 export const productService = {
   CreateProduct,
   GetAllProducts,
   GetProductById,
+  GetFeaturedProducts,
 };

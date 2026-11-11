@@ -49,8 +49,20 @@ const GetProductById: RequestHandler = catchAsync(async (req, res) => {
   });
 });
 
+const GetFeaturedProducts: RequestHandler = catchAsync(async (_req, res) => {
+  const products = await productService.GetFeaturedProducts();
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Featured products retrieved successfully",
+    data: products,
+  });
+});
+
 export const productController = {
   CreateProduct,
   GetAllProducts,
   GetProductById,
+  GetFeaturedProducts,
 };
