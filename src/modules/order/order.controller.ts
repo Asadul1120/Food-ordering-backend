@@ -36,7 +36,21 @@ const GetAllOrders: RequestHandler = catchAsync(async (req, res) => {
   });
 });
 
+const GetOrderById: RequestHandler = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  const order = await orderService.GetOrderById(id as string);
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Order retrieved successfully",
+    data: order,
+  });
+});
+
 export const orderController = {
   CreateOrder,
   GetAllOrders,
+  GetOrderById,
 };

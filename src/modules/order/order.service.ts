@@ -344,7 +344,73 @@ const GetAllOrders = async (query: IOrderQuery) => {
   };
 };
 
+const GetOrderById = async (orderId: string) => {
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
+    select: {
+      id: true,
+      orderNumber: true,
+      userId: true,
+      customerName: true,
+      customerPhone: true,
+      deliveryAddress: true,
+      orderNote: true,
+      subtotal: true,
+      discountAmount: true,
+      deliveryCharge: true,
+      totalAmount: true,
+      orderStatus: true,
+      createdAt: true,
+      updatedAt: true,
+
+      orderItems: {
+        select: {
+          id: true,
+          productId: true,
+          productName: true,
+          productPrice: true,
+          quantity: true,
+          subtotal: true,
+          createdAt: true,
+        },
+      },
+
+      payments: {
+        select: {
+          id: true,
+          amount: true,
+          paymentMethod: true,
+          paymentStatus: true,
+          transactionId: true,
+          paymentProvider: true,
+          paidAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+
+      coupon: {
+        select: {
+          id: true,
+          code: true,
+          discountType: true,
+          discountValue: true,
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw new AppError(404, "Order not found");
+  }
+
+  return order;
+};
+
 export const orderService = {
   CreateOrder,
   GetAllOrders,
+  GetOrderById,
 };
