@@ -3,11 +3,17 @@ import { prisma } from "../../lib/prisma.ts";
 import type { Prisma } from "../../generated/prisma/client.ts";
 
 import { AppError } from "../../utils/AppError.ts";
-import { PaymentStatus, DiscountType } from "../../generated/prisma/enums.ts";
+import {
+  PaymentStatus,
+  DiscountType,
+  OrderStatus,
+  UserRole,
+} from "../../generated/prisma/enums.ts";
 import type {
   ICreateOrderInput,
   IMyOrdersQuery,
   IOrderQuery,
+  IUpdateOrderStatusInput,
 } from "./order.interface.ts";
 
 const toCents = (value: string) => {
@@ -519,10 +525,184 @@ const GetOrderTracking = async (orderNumber: string) => {
   return order;
 };
 
+const UpdateOrderStatus = async (
+  orderId: string,
+  payload: IUpdateOrderStatusInput,
+) => {
+  const existingOrder = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
+    select: {
+      id: true,
+      orderNumber: true,
+      orderStatus: true,
+    },
+  });
+
+  if (!existingOrder) {
+    throw new AppError(404, "Order not found");
+  }
+
+  const allowedTransitions: Record<OrderStatus, OrderStatus[]> = {
+    [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+
+    [OrderStatus.CONFIRMED]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
+
+    [OrderStatus.PREPARING]: [OrderStatus.READY, OrderStatus.CANCELLED],
+
+    [OrderStatus.READY]: [OrderStatus.OUT_FOR_DELIVERY, OrderStatus.CANCELLED],
+
+    [OrderStatus.OUT_FOR_DELIVERY]: [OrderStatus.DELIVERED],
+
+    [OrderStatus.DELIVERED]: [],
+
+    [OrderStatus.CANCELLED]: [],
+  };
+
+  if (
+    !allowedTransitions[existingOrder.orderStatus].includes(payload.orderStatus)
+  ) {
+    throw new AppError(
+      400,
+      `Cannot change order status from ${existingOrder.orderStatus} to ${payload.orderStatus}`,
+    );
+  }
+
+  const updatedOrder = await prisma.order.updateMany({
+    where: {
+      id: orderId,
+      orderStatus: existingOrder.orderStatus,
+    },
+    data: {
+      orderStatus: payload.orderStatus,
+    },
+  });
+
+  if (updatedOrder.count === 0) {
+    throw new AppError(
+      409,
+      "Order status was changed by another request. Please refresh and try again",
+    );
+  }
+
+  const order = await prisma.order.findUnique({
+    where: {
+      id: orderId,
+    },
+    select: {
+      id: true,
+      orderNumber: true,
+      orderStatus: true,
+      updatedAt: true,
+    },
+  });
+
+  return order;
+};
+
+const CancelOrder = async (
+  orderId: string,
+  userId: string,
+  userRole: UserRole,
+) => {
+  return prisma.$transaction(async (tx) => {
+    const existingOrder = await tx.order.findUnique({
+      where: {
+        id: orderId,
+      },
+      select: {
+        id: true,
+        orderNumber: true,
+        userId: true,
+        orderStatus: true,
+        payments: {
+          select: {
+            paymentStatus: true,
+          },
+        },
+      },
+    });
+
+    if (!existingOrder) {
+      throw new AppError(404, "Order not found");
+    }
+
+    if (userRole === UserRole.CUSTOMER && existingOrder.userId !== userId) {
+      throw new AppError(403, "You are not allowed to cancel this order");
+    }
+
+    if (userRole !== UserRole.ADMIN && userRole !== UserRole.CUSTOMER) {
+      throw new AppError(403, "You do not have permission");
+    }
+
+    const allowedStatuses: OrderStatus[] =
+      userRole === UserRole.ADMIN
+        ? [
+            OrderStatus.PENDING,
+            OrderStatus.CONFIRMED,
+            OrderStatus.PREPARING,
+            OrderStatus.READY,
+          ]
+        : [OrderStatus.PENDING, OrderStatus.CONFIRMED];
+
+    if (!allowedStatuses.includes(existingOrder.orderStatus)) {
+      throw new AppError(
+        400,
+        `Order cannot be cancelled from ${existingOrder.orderStatus} status`,
+      );
+    }
+
+    const hasPaidPayment = existingOrder.payments.some(
+      (payment) => payment.paymentStatus === PaymentStatus.PAID,
+    );
+
+    if (hasPaidPayment) {
+      throw new AppError(
+        409,
+        "This order has been paid. Refund must be processed before cancellation",
+      );
+    }
+
+    const updatedOrder = await tx.order.updateMany({
+      where: {
+        id: orderId,
+        orderStatus: existingOrder.orderStatus,
+      },
+      data: {
+        orderStatus: OrderStatus.CANCELLED,
+      },
+    });
+
+    if (updatedOrder.count === 0) {
+      throw new AppError(
+        409,
+        "Order status changed. Please refresh and try again",
+      );
+    }
+
+    const order = await tx.order.findUnique({
+      where: {
+        id: orderId,
+      },
+      select: {
+        id: true,
+        orderNumber: true,
+        orderStatus: true,
+        updatedAt: true,
+      },
+    });
+
+    return order;
+  });
+};
+
 export const orderService = {
   CreateOrder,
   GetAllOrders,
   GetOrderById,
   GetMyOrders,
   GetOrderTracking,
+  UpdateOrderStatus,
+  CancelOrder,
 };

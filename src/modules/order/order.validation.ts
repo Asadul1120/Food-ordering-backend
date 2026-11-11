@@ -81,3 +81,9 @@ export const myOrdersQueryValidationSchema = z
     orderStatus: z.nativeEnum(OrderStatus).optional(),
   })
   .strict();
+
+export const updateOrderStatusValidationSchema = z
+  .object({
+    orderStatus: z.nativeEnum(OrderStatus),
+  })
+  .strict();

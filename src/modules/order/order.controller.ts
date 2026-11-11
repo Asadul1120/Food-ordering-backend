@@ -91,10 +91,45 @@ const GetOrderTracking: RequestHandler = catchAsync(async (req, res) => {
   });
 });
 
+const UpdateOrderStatus: RequestHandler = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  const order = await orderService.UpdateOrderStatus(id as string, req.body);
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Order status updated successfully",
+    data: order,
+  });
+});
+
+const CancelOrder: RequestHandler = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  const userId = req.user?.id;
+  const userRole = req.user?.role;
+
+  if (!userId || !userRole) {
+    throw new AppError(401, "Please login first");
+  }
+
+  const order = await orderService.CancelOrder(id as string, userId, userRole);
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Order cancelled successfully",
+    data: order,
+  });
+});
+
 export const orderController = {
   CreateOrder,
   GetAllOrders,
   GetOrderById,
   GetMyOrders,
   GetOrderTracking,
+  UpdateOrderStatus,
+  CancelOrder,
 };

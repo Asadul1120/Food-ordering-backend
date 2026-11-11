@@ -34,3 +34,7 @@ export interface IMyOrdersQuery {
   limit: number;
   orderStatus?: OrderStatus;
 }
+
+export interface IUpdateOrderStatusInput {
+  orderStatus: OrderStatus;
+}
