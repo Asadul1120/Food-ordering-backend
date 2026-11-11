@@ -34,7 +34,9 @@ const CreateOrder = async (payload: ICreateOrderInput, userId?: string) => {
     items,
   } = payload;
 
-  const orderNumber = `ORD-${Date.now()}-${randomBytes(3).toString("hex").toUpperCase()}`;
+  //   const orderNumber = `ORD-${Date.now()}-${randomBytes(3).toString("hex").toUpperCase()}`;
+
+  const orderNumber = `ORD-${randomBytes(16).toString("hex").toUpperCase()}`;
 
   const itemMap = new Map<string, number>();
 
@@ -487,9 +489,40 @@ const GetMyOrders = async (userId: string, query: IMyOrdersQuery) => {
     },
   };
 };
+
+const GetOrderTracking = async (orderNumber: string) => {
+  const order = await prisma.order.findUnique({
+    where: {
+      orderNumber,
+    },
+    select: {
+      customerName: true,
+      customerPhone: true,
+      deliveryAddress: true,
+      orderNumber: true,
+      orderStatus: true,
+      createdAt: true,
+      updatedAt: true,
+      payments: {
+        select: {
+          paymentStatus: true,
+          paidAt: true,
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw new AppError(404, "Order not found");
+  }
+
+  return order;
+};
+
 export const orderService = {
   CreateOrder,
   GetAllOrders,
   GetOrderById,
   GetMyOrders,
+  GetOrderTracking,
 };

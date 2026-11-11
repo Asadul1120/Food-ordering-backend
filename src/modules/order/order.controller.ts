@@ -78,9 +78,23 @@ const GetMyOrders: RequestHandler = catchAsync(async (req, res) => {
   });
 });
 
+const GetOrderTracking: RequestHandler = catchAsync(async (req, res) => {
+  const { orderNumber } = req.params;
+
+  const order = await orderService.GetOrderTracking(orderNumber as string);
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Order tracking information retrieved successfully",
+    data: order,
+  });
+});
+
 export const orderController = {
   CreateOrder,
   GetAllOrders,
   GetOrderById,
   GetMyOrders,
+  GetOrderTracking,
 };
