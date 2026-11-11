@@ -3,7 +3,10 @@ import { productController } from "./product.controller.ts";
 import Auth from "../../middleware/Auth.ts";
 import { UserRole } from "../../generated/prisma/enums.ts";
 import { validateRequest } from "../../middleware/validateRequest.ts";
-import { createProductValidationSchema } from "./product.validation.ts";
+import {
+  createProductValidationSchema,
+  updateProductValidationSchema,
+} from "./product.validation.ts";
 import { uploadProductImage } from "../../middleware/upload.ts";
 
 const router = Router();
@@ -21,6 +24,14 @@ router.get("/", productController.GetAllProducts);
 router.get("/featured", productController.GetFeaturedProducts);
 
 router.get("/category/:categoryId", productController.GetProductsByCategory);
+
+router.patch(
+  "/:id",
+  Auth(UserRole.ADMIN),
+  uploadProductImage,
+  validateRequest(updateProductValidationSchema),
+  productController.UpdateProduct,
+);
 
 router.get("/:id", productController.GetProductById);
 

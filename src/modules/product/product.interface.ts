@@ -19,3 +19,12 @@ export interface IProductQuery {
 }
 
 export type IProductCategoryQuery = Omit<IProductQuery, "categoryId">;
+
+export interface IUpdateProductInput {
+  categoryId?: string;
+  name?: string;
+  slug?: string;
+  description?: string | null;
+  price?: string;
+  preparationTime?: number | null;
+}

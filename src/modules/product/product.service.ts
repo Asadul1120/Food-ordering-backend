@@ -9,6 +9,7 @@ import type {
   ICreateProductInput,
   IProductCategoryQuery,
   IProductQuery,
+  IUpdateProductInput,
 } from "./product.interface.ts";
 
 const CreateProduct = async (
@@ -332,10 +333,170 @@ const GetProductsByCategory = async (
   return result;
 };
 
+const UpdateProduct = async (
+  productId: string,
+  payload: IUpdateProductInput,
+  file?: Express.Multer.File,
+) => {
+  const existingProduct = await prisma.product.findUnique({
+    where: {
+      id: productId,
+    },
+  });
+
+  if (!existingProduct) {
+    throw new AppError(404, "Product not found");
+  }
+
+  if (Object.keys(payload).length === 0 && !file) {
+    throw new AppError(400, "At least one field or image is required");
+  }
+
+  if (payload.categoryId) {
+    const category = await prisma.category.findFirst({
+      where: {
+        id: payload.categoryId,
+        isActive: true,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!category) {
+      throw new AppError(404, "Active category not found");
+    }
+  }
+
+  let slug = payload.slug;
+
+  if (payload.name && !payload.slug) {
+    slug = payload.name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    if (!slug) {
+      throw new AppError(400, "Please provide a valid English product slug");
+    }
+  }
+
+  if (slug && slug !== existingProduct.slug) {
+    const existingSlug = await prisma.product.findUnique({
+      where: {
+        slug,
+      },
+    });
+
+    if (existingSlug) {
+      throw new AppError(409, "Product slug already exists");
+    }
+  }
+
+  let uploadedImage;
+
+  if (file) {
+    uploadedImage = await uploadToCloudinary(file, "food-ordering/products");
+  }
+
+  let product;
+
+  try {
+    product = await prisma.product.update({
+      where: {
+        id: productId,
+      },
+      data: {
+        ...(payload.categoryId !== undefined && {
+          categoryId: payload.categoryId,
+        }),
+
+        ...(payload.name !== undefined && {
+          name: payload.name,
+        }),
+
+        ...(slug !== undefined && {
+          slug,
+        }),
+
+        ...(payload.description !== undefined && {
+          description: payload.description,
+        }),
+
+        ...(payload.price !== undefined && {
+          price: payload.price,
+        }),
+
+        ...(payload.preparationTime !== undefined && {
+          preparationTime: payload.preparationTime,
+        }),
+
+        ...(uploadedImage && {
+          imageUrl: uploadedImage.secure_url,
+          imagePublicId: uploadedImage.public_id,
+        }),
+      },
+      select: {
+        id: true,
+        categoryId: true,
+        name: true,
+        slug: true,
+        description: true,
+        price: true,
+        imageUrl: true,
+        isAvailable: true,
+        isFeatured: true,
+        preparationTime: true,
+        createdAt: true,
+        updatedAt: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+          },
+        },
+      },
+    });
+  } catch (error) {
+    if (uploadedImage?.public_id) {
+      await deleteFromCloudinary(uploadedImage.public_id).catch(
+        (deleteError) => {
+          console.error("New product image cleanup failed:", deleteError);
+        },
+      );
+    }
+
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "P2002"
+    ) {
+      throw new AppError(409, "Product slug already exists");
+    }
+
+    throw error;
+  }
+
+  if (
+    uploadedImage &&
+    existingProduct.imagePublicId &&
+    existingProduct.imagePublicId !== uploadedImage.public_id
+  ) {
+    await deleteFromCloudinary(existingProduct.imagePublicId).catch((error) => {
+      console.error("Old product image deletion failed:", error);
+    });
+  }
+
+  return product;
+};
+
 export const productService = {
   CreateProduct,
   GetAllProducts,
   GetProductById,
   GetFeaturedProducts,
   GetProductsByCategory,
+  UpdateProduct,
 };

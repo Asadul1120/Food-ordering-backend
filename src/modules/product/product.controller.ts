@@ -88,10 +88,28 @@ const GetProductsByCategory: RequestHandler = catchAsync(async (req, res) => {
   });
 });
 
+const UpdateProduct: RequestHandler = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  const product = await productService.UpdateProduct(
+    id as string,
+    req.body,
+    req.file,
+  );
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Product updated successfully",
+    data: product,
+  });
+});
+
 export const productController = {
   CreateProduct,
   GetAllProducts,
   GetProductById,
   GetFeaturedProducts,
   GetProductsByCategory,
+  UpdateProduct,
 };
