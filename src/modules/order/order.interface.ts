@@ -1,3 +1,5 @@
+import { OrderStatus } from "../../generated/prisma/enums.ts";
+
 export type TPaymentMethod =
   | "CASH_ON_DELIVERY"
   | "BKASH"
@@ -17,4 +19,11 @@ export interface ICreateOrderInput {
   couponCode?: string;
   paymentMethod: TPaymentMethod;
   items: ICreateOrderItem[];
+}
+
+export interface IOrderQuery {
+  page: number;
+  limit: number;
+  search?: string;
+  orderStatus?: OrderStatus;
 }

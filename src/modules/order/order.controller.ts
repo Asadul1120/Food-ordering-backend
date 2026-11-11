@@ -2,6 +2,8 @@ import type { RequestHandler } from "express";
 import { catchAsync } from "../../utils/catchAsync.ts";
 import apiResponse from "../../utils/apiResponse.ts";
 import { orderService } from "./order.service.ts";
+import { orderQueryValidationSchema } from "./order.validation.ts";
+import { AppError } from "../../utils/AppError.ts";
 
 const CreateOrder: RequestHandler = catchAsync(async (req, res) => {
   const order = await orderService.CreateOrder(req.body, req.user?.id);
@@ -14,6 +16,27 @@ const CreateOrder: RequestHandler = catchAsync(async (req, res) => {
   });
 });
 
+const GetAllOrders: RequestHandler = catchAsync(async (req, res) => {
+  const result = orderQueryValidationSchema.safeParse(req.query);
+
+  if (!result.success) {
+    throw new AppError(
+      400,
+      result.error.issues[0]?.message ?? "Invalid query parameters",
+    );
+  }
+
+  const orders = await orderService.GetAllOrders(result.data);
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Orders retrieved successfully",
+    data: orders,
+  });
+});
+
 export const orderController = {
   CreateOrder,
+  GetAllOrders,
 };

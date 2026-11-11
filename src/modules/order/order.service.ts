@@ -1,10 +1,10 @@
 import { randomBytes } from "node:crypto";
 import { prisma } from "../../lib/prisma.ts";
+import type { Prisma } from "../../generated/prisma/client.ts";
+
 import { AppError } from "../../utils/AppError.ts";
 import { PaymentStatus, DiscountType } from "../../generated/prisma/enums.ts";
-import type { ICreateOrderInput } from "./order.interface.ts";
-
-
+import type { ICreateOrderInput, IOrderQuery } from "./order.interface.ts";
 
 const toCents = (value: string) => {
   const [whole, fraction = ""] = value.split(".");
@@ -18,8 +18,6 @@ const toMoney = (cents: bigint) => {
 
   return `${whole}.${fraction}`;
 };
-
-
 
 const CreateOrder = async (payload: ICreateOrderInput, userId?: string) => {
   const {
@@ -258,6 +256,95 @@ const CreateOrder = async (payload: ICreateOrderInput, userId?: string) => {
   });
 };
 
+const GetAllOrders = async (query: IOrderQuery) => {
+  const { page, limit, search, orderStatus } = query;
+
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.OrderWhereInput = {
+    ...(orderStatus && {
+      orderStatus,
+    }),
+
+    ...(search && {
+      OR: [
+        {
+          orderNumber: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          customerName: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          customerPhone: {
+            contains: search,
+          },
+        },
+      ],
+    }),
+  };
+
+  const [orders, totalOrders] = await prisma.$transaction([
+    prisma.order.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        orderNumber: true,
+        userId: true,
+        customerName: true,
+        customerPhone: true,
+        deliveryAddress: true,
+        subtotal: true,
+        discountAmount: true,
+        deliveryCharge: true,
+        totalAmount: true,
+        orderStatus: true,
+        createdAt: true,
+        updatedAt: true,
+        _count: {
+          select: {
+            orderItems: true,
+          },
+        },
+        payments: {
+          select: {
+            id: true,
+            amount: true,
+            paymentMethod: true,
+            paymentStatus: true,
+            createdAt: true,
+          },
+        },
+      },
+    }),
+
+    prisma.order.count({
+      where,
+    }),
+  ]);
+
+  return {
+    orders,
+    pagination: {
+      totalOrders,
+      currentPage: page,
+      totalPages: Math.ceil(totalOrders / limit),
+      limit,
+    },
+  };
+};
+
 export const orderService = {
   CreateOrder,
+  GetAllOrders,
 };
