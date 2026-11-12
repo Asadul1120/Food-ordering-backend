@@ -7,8 +7,10 @@ model Payment {
   paymentMethod PaymentMethod
   paymentStatus PaymentStatus @default(PENDING)
 
-  transactionId   String? @unique
-  paymentProvider String?
+  transactionId     String? @unique
+  paymentProvider   String?
+  providerPaymentId String? @unique
+  checkoutUrl       String?
 
   paidAt DateTime?
 
