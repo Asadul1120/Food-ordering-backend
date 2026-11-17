@@ -24,6 +24,18 @@ const InitiatePayment: RequestHandler = catchAsync(async (req, res) => {
   });
 });
 
+const VerifyPayment: RequestHandler = catchAsync(async (req, res) => {
+  const payment = await paymentService.VerifyPayment(req.body, req.user?.id);
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Payment verified successfully",
+    data: payment,
+  });
+});
+
 export const paymentController = {
   InitiatePayment,
+  VerifyPayment,
 };

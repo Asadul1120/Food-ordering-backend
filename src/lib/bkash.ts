@@ -3,14 +3,28 @@ import { config } from "../config/index.ts";
 interface IBkashResponse {
   statusCode?: string;
   statusMessage?: string;
+
   errorCode?: string;
   errorMessage?: string;
   message?: string;
+
   id_token?: string;
   expires_in?: number | string;
-  paymentID?: string;
+
   paymentId?: string;
+  paymentID?: string;
+
   bkashURL?: string;
+  bkashUrl?: string;
+
+  transactionStatus?: string;
+  trxID?: string;
+  trxId?: string;
+  amount?: string;
+  currency?: string;
+  intent?: string;
+  merchantInvoiceNumber?: string;
+  paymentExecuteTime?: string;
 }
 
 interface ICreateBkashPayment {
@@ -145,4 +159,54 @@ export const createBkashPayment = async (payload: ICreateBkashPayment) => {
     paymentId,
     bkashURL: result.bkashURL,
   };
+};
+
+
+export const executeBkashPayment = async (
+  paymentID: string,
+) => {
+  const response = await fetch(
+    `${getBaseUrl()}/tokenized/checkout/execute`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: await getBkashToken(),
+        "x-app-key": getConfigValue(
+          config.bkash_app_key,
+          "BKASH_APP_KEY",
+        ),
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        paymentID,
+      }),
+      signal: AbortSignal.timeout(30000),
+    },
+  );
+
+  return getBkashResponse(response, "bKash Execute Payment");
+};
+
+
+export const queryBkashPayment = async (
+  paymentID: string,
+) => {
+  const response = await fetch(
+    `${getBaseUrl()}/tokenized/checkout/payment/status?paymentID=${encodeURIComponent(paymentID)}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: await getBkashToken(),
+        "x-app-key": getConfigValue(
+          config.bkash_app_key,
+          "BKASH_APP_KEY",
+        ),
+        Accept: "application/json",
+      },
+      signal: AbortSignal.timeout(30000),
+    },
+  );
+
+  return getBkashResponse(response, "bKash Query Payment");
 };

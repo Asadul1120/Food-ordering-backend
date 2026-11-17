@@ -105,7 +105,7 @@ const LoginUser = async (payload: ILoginInput) => {
   const accessToken = createToken(jwtPayload);
   const refreshToken = createRefreshToken(jwtPayload);
 
-  return { accessToken, refreshToken };
+  return { accessToken, refreshToken, role: user.role };
 };
 
 const GetCurrentUser = async (userId: string) => {
