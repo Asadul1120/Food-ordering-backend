@@ -10,10 +10,12 @@ import { userRoutes } from "./modules/user/user.route.ts";
 import { categoryRoutes } from "./modules/category/category.route.ts";
 import { productRoutes } from "./modules/product/product.route.ts";
 import { orderRoutes } from "./modules/order/order.route.ts";
+import { paymentRoutes } from "./modules/payment/payment.route.ts";
 
 const app = express();
 
 app.use(cors({ origin: config.frontend_url, credentials: true }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -28,6 +30,7 @@ app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/orders", orderRoutes);
+app.use("/api/v1/payments", paymentRoutes);
 
 app.use(notFound);
 app.use(globalErrorHandler);

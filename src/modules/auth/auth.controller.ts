@@ -43,7 +43,9 @@ const Register: RequestHandler = catchAsync(async (req, res) => {
 });
 
 const Login: RequestHandler = catchAsync(async (req, res) => {
-  const { accessToken, refreshToken } = await authService.LoginUser(req.body);
+  const { accessToken, refreshToken, role } = await authService.LoginUser(
+    req.body,
+  );
 
   res.cookie("accessToken", accessToken, {
     ...cookieOptions,
@@ -59,7 +61,7 @@ const Login: RequestHandler = catchAsync(async (req, res) => {
     statusCode: 200,
     success: true,
     message: "Login successful",
-    data: { accessToken, refreshToken },
+    data: { accessToken, refreshToken, role },
   });
 });
 

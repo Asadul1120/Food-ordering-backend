@@ -5,7 +5,7 @@ import { prisma } from "./lib/prisma.ts";
 export async function startServer(): Promise<void> {
   try {
     await prisma.$connect();
-   
+    console.log("Connected to the database");
     app.listen(config.port, () => {
       console.log(`Server is running on http://localhost:${config.port}`);
     });
