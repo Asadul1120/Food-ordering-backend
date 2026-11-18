@@ -117,7 +117,7 @@ const CreateProduct = async (
   }
 };
 
-const GetAllProducts = async (query: IProductQuery) => {
+const GetAllProducts = async (query: IProductQuery, includeHidden = false) => {
   const {
     page,
     limit,
@@ -142,11 +142,14 @@ const GetAllProducts = async (query: IProductQuery) => {
   };
 
   const where = {
-    isAvailable: true,
-
-    category: {
-      isActive: true,
-    },
+    ...(includeHidden
+      ? {}
+      : {
+          isAvailable: true,
+          category: {
+            isActive: true,
+          },
+        }),
 
     ...(categoryId && {
       categoryId,
@@ -230,6 +233,10 @@ const GetAllProducts = async (query: IProductQuery) => {
       limit,
     },
   };
+};
+
+const GetAdminProducts = (query: IProductQuery) => {
+  return GetAllProducts(query, true);
 };
 
 const GetProductById = async (productId: string) => {
@@ -626,6 +633,7 @@ const DeleteProduct = async (productId: string) => {
 export const productService = {
   CreateProduct,
   GetAllProducts,
+  GetAdminProducts,
   GetProductById,
   GetFeaturedProducts,
   GetProductsByCategory,

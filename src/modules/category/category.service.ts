@@ -108,6 +108,25 @@ const GetAllCategories = async () => {
   return categories;
 };
 
+const GetAdminCategories = async () => {
+  return prisma.category.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      imageUrl: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+};
+
 const GetCategoryById = async (categoryId: string) => {
   const category = await prisma.category.findFirst({
     where: {
@@ -211,6 +230,10 @@ const UpdateCategory = async (
 
         ...(payload.description !== undefined && {
           description: payload.description || null,
+        }),
+
+        ...(payload.isActive !== undefined && {
+          isActive: payload.isActive,
         }),
 
         ...(uploadedImage && {
@@ -323,6 +346,7 @@ const DeleteCategory = async (categoryId: string) => {
 export const categoryService = {
   CreateCategory,
   GetAllCategories,
+  GetAdminCategories,
   GetCategoryById,
   UpdateCategory,
   DeleteCategory,

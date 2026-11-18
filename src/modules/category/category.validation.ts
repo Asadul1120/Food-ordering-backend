@@ -45,5 +45,7 @@ export const updateCategoryValidationSchema = z
       .max(500, "Description cannot exceed 500 characters")
       .nullable()
       .optional(),
+
+    isActive: z.boolean().optional(),
   })
   .strict();

@@ -4,8 +4,10 @@ export interface ICreateCategoryInput {
   description?: string;
 }
 
+
 export interface IUpdateCategoryInput {
   name?: string;
   slug?: string;
   description?: string | null;
+  isActive?: boolean;
 }

@@ -21,6 +21,12 @@ router.post(
 
 router.get("/", categoryController.GetAllCategories);
 
+router.get(
+  "/admin",
+  Auth(UserRole.ADMIN),
+  categoryController.GetAdminCategories,
+);
+
 router.get("/:id", categoryController.GetCategoryById);
 
 router.patch(
