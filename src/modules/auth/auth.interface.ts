@@ -1,6 +1,6 @@
 export interface IRegisterInput {
   name: string;
-  phone: string;
+  phone?: string;
   email: string;
   password: string;
 }
