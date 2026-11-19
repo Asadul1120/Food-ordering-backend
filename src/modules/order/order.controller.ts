@@ -247,7 +247,9 @@ const GetOrderTracking: RequestHandler = catchAsync(async (req, res) => {
 const UpdateOrderStatus: RequestHandler = catchAsync(async (req, res) => {
   const { id } = req.params;
 
-  const order = await orderService.UpdateOrderStatus(id as string, req.body);
+  const order = await orderService.UpdateOrderStatus(  id as string,
+  req.body,
+  req.user?.role,);
 
   apiResponse(res, {
     statusCode: 200,
