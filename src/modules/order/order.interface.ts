@@ -2,10 +2,8 @@ import { OrderStatus } from "../../generated/prisma/enums.ts";
 
 export type TPaymentMethod =
   | "CASH_ON_DELIVERY"
-  | "BKASH"
-  | "STRIPE"
-  | "SSLCOMMERZ";
-
+  | "BKASH";
+  
 export interface ICreateOrderItem {
   productId: string;
   quantity: number;

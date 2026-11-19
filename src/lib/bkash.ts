@@ -161,49 +161,43 @@ export const createBkashPayment = async (payload: ICreateBkashPayment) => {
   };
 };
 
-
-export const executeBkashPayment = async (
-  paymentID: string,
-) => {
-  const response = await fetch(
-    `${getBaseUrl()}/tokenized/checkout/execute`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: await getBkashToken(),
-        "x-app-key": getConfigValue(
-          config.bkash_app_key,
-          "BKASH_APP_KEY",
-        ),
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        paymentID,
-      }),
-      signal: AbortSignal.timeout(30000),
+export const executeBkashPayment = async (paymentID: string) => {
+  const response = await fetch(`${getBaseUrl()}/tokenized/checkout/execute`, {
+    method: "POST",
+    headers: {
+      Authorization: await getBkashToken(),
+      "x-app-key": getConfigValue(config.bkash_app_key, "BKASH_APP_KEY"),
+      "Content-Type": "application/json",
+      Accept: "application/json",
     },
-  );
+    body: JSON.stringify({
+      paymentID,
+    }),
+    signal: AbortSignal.timeout(30000),
+  });
 
   return getBkashResponse(response, "bKash Execute Payment");
 };
 
-
-export const queryBkashPayment = async (
-  paymentID: string,
-) => {
+export const queryBkashPayment = async (paymentID: string) => {
   const response = await fetch(
-    `${getBaseUrl()}/tokenized/checkout/payment/status?paymentID=${encodeURIComponent(paymentID)}`,
+    `${getBaseUrl()}/tokenized/checkout/payment/status`,
     {
-      method: "GET",
+      method: "POST",
+
       headers: {
         Authorization: await getBkashToken(),
-        "x-app-key": getConfigValue(
-          config.bkash_app_key,
-          "BKASH_APP_KEY",
-        ),
+
+        "x-app-key": getConfigValue(config.bkash_app_key, "BKASH_APP_KEY"),
+
+        "Content-Type": "application/json",
         Accept: "application/json",
       },
+
+      body: JSON.stringify({
+        paymentID,
+      }),
+
       signal: AbortSignal.timeout(30000),
     },
   );

@@ -3,6 +3,7 @@ model Order {
   orderNumber String @unique
 
   userId   String?
+  guestTokenHash String?
   couponId String?
 
   customerName    String
