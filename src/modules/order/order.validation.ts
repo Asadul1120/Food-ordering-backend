@@ -34,12 +34,7 @@ export const createOrderValidationSchema = z
       z.string().max(50).optional(),
     ),
 
-    paymentMethod: z.enum([
-      "CASH_ON_DELIVERY",
-      "BKASH",
-      "STRIPE",
-      "SSLCOMMERZ",
-    ]),
+    paymentMethod: z.enum(["CASH_ON_DELIVERY", "BKASH"]),
 
     items: z
       .array(

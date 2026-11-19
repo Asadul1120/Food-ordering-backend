@@ -108,6 +108,26 @@ const GetAllCategories = async () => {
   return categories;
 };
 
+const GetAdminCategories = async () => {
+  const categories = await prisma.category.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      imageUrl: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return categories;
+};
+
 const GetCategoryById = async (categoryId: string) => {
   const category = await prisma.category.findFirst({
     where: {
@@ -323,6 +343,7 @@ const DeleteCategory = async (categoryId: string) => {
 export const categoryService = {
   CreateCategory,
   GetAllCategories,
+  GetAdminCategories,
   GetCategoryById,
   UpdateCategory,
   DeleteCategory,

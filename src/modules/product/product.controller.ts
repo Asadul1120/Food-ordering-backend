@@ -39,6 +39,26 @@ const GetAllProducts: RequestHandler = catchAsync(async (req, res) => {
   });
 });
 
+const GetAdminProducts: RequestHandler = catchAsync(async (req, res) => {
+  const result = productQueryValidationSchema.safeParse(req.query);
+
+  if (!result.success) {
+    throw new AppError(
+      400,
+      result.error.issues[0]?.message ?? "Invalid query parameters",
+    );
+  }
+
+  const products = await productService.GetAdminProducts(result.data);
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Admin products retrieved successfully",
+    data: products,
+  });
+});
+
 const GetProductById: RequestHandler = catchAsync(async (req, res) => {
   const { id } = req.params;
 
@@ -155,6 +175,7 @@ const DeleteProduct: RequestHandler = catchAsync(async (req, res) => {
 export const productController = {
   CreateProduct,
   GetAllProducts,
+  GetAdminProducts,
   GetProductById,
   GetFeaturedProducts,
   GetProductsByCategory,

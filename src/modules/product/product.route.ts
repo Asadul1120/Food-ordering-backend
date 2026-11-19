@@ -27,6 +27,12 @@ router.get("/featured", productController.GetFeaturedProducts);
 
 router.get("/category/:categoryId", productController.GetProductsByCategory);
 
+router.get(
+  "/admin",
+  Auth(UserRole.ADMIN),
+  productController.GetAdminProducts,
+);
+
 router.patch(
   "/:id",
   Auth(UserRole.ADMIN),

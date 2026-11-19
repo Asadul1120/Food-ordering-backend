@@ -25,6 +25,17 @@ const GetAllCategories: RequestHandler = catchAsync(async (_req, res) => {
   });
 });
 
+const GetAdminCategories: RequestHandler = catchAsync(async (_req, res) => {
+  const categories = await categoryService.GetAdminCategories();
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Admin categories retrieved successfully",
+    data: categories,
+  });
+});
+
 const GetCategoryById: RequestHandler = catchAsync(async (req, res) => {
   const { id } = req.params;
 
@@ -71,6 +82,7 @@ const DeleteCategory: RequestHandler = catchAsync(async (req, res) => {
 export const categoryController = {
   CreateCategory,
   GetAllCategories,
+  GetAdminCategories,
   GetCategoryById,
   UpdateCategory,
   DeleteCategory,
