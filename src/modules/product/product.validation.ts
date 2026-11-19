@@ -145,26 +145,16 @@ export const updateProductValidationSchema = z
       .optional(),
 
     description: z.preprocess(
-      (value) => (value === "" ? undefined : value),
+      (value) => (value === "" ? null : value),
       z.string().trim().max(1000).nullable().optional(),
-    ),
-
-    price: z.preprocess(
-      (value) =>
-        value === undefined || value === null ? value : String(value).trim(),
-      z
-        .string()
-        .regex(/^\d+(\.\d{1,2})?$/, "Price must have up to 2 decimal places")
-        .refine((value) => Number(value) > 0, "Price must be greater than 0")
-        .optional(),
     ),
 
     preparationTime: z.preprocess(
       (value) =>
-        value === "" || value === undefined
-          ? undefined
-          : value === null
-            ? null
+        value === ""
+          ? null
+          : value === undefined || value === null
+            ? value
             : Number(value),
       z
         .number()
@@ -182,8 +172,7 @@ export const updateProductAvailabilityValidationSchema = z
   })
   .strict();
 
-
-  export const updateProductFeaturedValidationSchema = z
+export const updateProductFeaturedValidationSchema = z
   .object({
     isFeatured: z.boolean(),
   })

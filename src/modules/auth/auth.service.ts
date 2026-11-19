@@ -15,26 +15,22 @@ import type { IRegisterInput, ILoginInput } from "./auth.interface.ts";
 const RegisterUser = async (payload: IRegisterInput) => {
   const { name, phone, email, password } = payload;
 
-  const existingPhone = await prisma.user.findUnique({
-    where: {
-      phone,
-    },
-  });
-
-  if (existingPhone) {
-    throw new AppError(409, "Phone number already exists");
-  }
-
-  if (email) {
-    const existingEmail = await prisma.user.findUnique({
-      where: {
-        email,
-      },
+  if (phone) {
+    const existingPhone = await prisma.user.findUnique({
+      where: { phone },
     });
 
-    if (existingEmail) {
-      throw new AppError(409, "Email already exists");
+    if (existingPhone) {
+      throw new AppError(409, "Phone number already exists");
     }
+  }
+
+  const existingEmail = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (existingEmail) {
+    throw new AppError(409, "Email already exists");
   }
 
   const hashedPassword = await hashPassword(password);
@@ -42,10 +38,9 @@ const RegisterUser = async (payload: IRegisterInput) => {
   const user = await prisma.user.create({
     data: {
       name,
-      phone,
+      phone: phone ?? null,
       email,
       password: hashedPassword,
-
       role: UserRole.CUSTOMER,
     },
     select: {

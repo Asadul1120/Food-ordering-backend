@@ -23,6 +23,13 @@ router.post(
 
 router.get("/", productController.GetAllProducts);
 
+router.get(
+  "/admin",
+  Auth(UserRole.ADMIN),
+  productController.GetAdminProducts,
+);
+
+
 router.get("/featured", productController.GetFeaturedProducts);
 
 router.get("/category/:categoryId", productController.GetProductsByCategory);

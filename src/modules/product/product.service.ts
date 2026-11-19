@@ -117,7 +117,7 @@ const CreateProduct = async (
   }
 };
 
-const GetAllProducts = async (query: IProductQuery) => {
+const GetAllProducts = async (query: IProductQuery, includeHidden = false) => {
   const {
     page,
     limit,
@@ -142,11 +142,14 @@ const GetAllProducts = async (query: IProductQuery) => {
   };
 
   const where = {
-    isAvailable: true,
-
-    category: {
-      isActive: true,
-    },
+    ...(includeHidden
+      ? {}
+      : {
+          isAvailable: true,
+          category: {
+            isActive: true,
+          },
+        }),
 
     ...(categoryId && {
       categoryId,
@@ -232,6 +235,7 @@ const GetAllProducts = async (query: IProductQuery) => {
   };
 };
 
+
 const GetAdminProducts = async (query: IProductQuery) => {
   const {
     page,
@@ -316,7 +320,6 @@ const GetAdminProducts = async (query: IProductQuery) => {
     },
   };
 };
-
 const GetProductById = async (productId: string) => {
   const product = await prisma.product.findFirst({
     where: {
