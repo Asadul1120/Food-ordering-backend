@@ -1,15 +1,18 @@
 import { randomBytes, createHash } from "node:crypto";
-import { prisma } from "../../lib/prisma.ts";
 import type { Prisma } from "../../generated/prisma/client.ts";
-import { AppError } from "../../utils/AppError.ts";
 
 import {
   PaymentStatus,
-  DiscountType,
   OrderStatus,
   UserRole,
   PaymentMethod,
 } from "../../generated/prisma/enums.ts";
+
+import { prisma } from "../../lib/prisma.ts";
+import { AppError } from "../../utils/AppError.ts";
+import { toMoney } from "../../utils/money.ts";
+import { redeemCoupon } from "../coupon/coupon-pricing.ts";
+import { priceCart } from "./order-pricing.ts";
 
 import type {
   ICreateOrderInput,
@@ -17,17 +20,6 @@ import type {
   IOrderQuery,
   IUpdateOrderStatusInput,
 } from "./order.interface.ts";
-
-const toCents = (value: string) => {
-  const [whole, fraction = ""] = value.split(".");
-  return BigInt(whole) * 100n + BigInt((fraction + "00").slice(0, 2));
-};
-
-const toMoney = (cents: bigint) => {
-  const whole = cents / 100n;
-  const fraction = (cents % 100n).toString().padStart(2, "0");
-  return `${whole}.${fraction}`;
-};
 
 // 1. Create order
 const CreateOrder = async (payload: ICreateOrderInput, userId?: string) => {
@@ -49,217 +41,114 @@ const CreateOrder = async (payload: ICreateOrderInput, userId?: string) => {
   }
 
   const orderNumber = `ORD-${randomBytes(16).toString("hex").toUpperCase()}`;
+
   const guestToken = userId ? null : randomBytes(32).toString("hex");
+
   const guestTokenHash = guestToken
     ? createHash("sha256").update(guestToken).digest("hex")
     : null;
 
-  const itemMap = new Map<string, number>();
+  return prisma.$transaction(
+    async (tx) => {
+      const { orderItems, subtotalCents, deliveryChargeCents } =
+        await priceCart(tx, items);
 
-  for (const item of items) {
-    itemMap.set(
-      item.productId,
-      (itemMap.get(item.productId) || 0) + item.quantity,
-    );
-  }
+      let couponId: string | null = null;
+      let discountCents = 0n;
 
-  for (const quantity of itemMap.values()) {
-    if (quantity > 99) {
-      throw new AppError(400, "Maximum quantity for one product is 99");
-    }
-  }
+      if (couponCode) {
+        const coupon = await redeemCoupon(
+          tx,
+          couponCode,
+          subtotalCents,
+          deliveryChargeCents,
+          userId,
+        );
 
-  const productIds = [...itemMap.keys()];
-
-  return prisma.$transaction(async (tx) => {
-    const products = await tx.product.findMany({
-      where: { id: { in: productIds } },
-      select: {
-        id: true,
-        name: true,
-        price: true,
-        isAvailable: true,
-        category: { select: { isActive: true } },
-      },
-    });
-
-    if (products.length !== productIds.length) {
-      throw new AppError(404, "One or more products were not found");
-    }
-
-    const unavailableProduct = products.find(
-      (product) => !product.isAvailable || !product.category.isActive,
-    );
-
-    if (unavailableProduct) {
-      throw new AppError(
-        409,
-        `${unavailableProduct.name} is currently unavailable`,
-      );
-    }
-
-    const productMap = new Map(
-      products.map((product) => [product.id, product]),
-    );
-    let subtotalCents = 0n;
-
-    const orderItems = productIds.map((productId) => {
-      const product = productMap.get(productId)!;
-      const quantity = itemMap.get(productId)!;
-      const productPriceCents = toCents(product.price.toString());
-      const itemSubtotalCents = productPriceCents * BigInt(quantity);
-
-      subtotalCents += itemSubtotalCents;
-
-      return {
-        productId: product.id,
-        productName: product.name,
-        productPrice: toMoney(productPriceCents),
-        quantity,
-        subtotal: toMoney(itemSubtotalCents),
-      };
-    });
-
-    const deliveryChargeCents = 0n;
-    let discountCents = 0n;
-    let couponId: string | null = null;
-
-    if (couponCode) {
-      const coupon = await tx.coupon.findUnique({
-        where: { code: couponCode },
-      });
-
-      if (!coupon || !coupon.isActive) {
-        throw new AppError(400, "Invalid or inactive coupon");
+        couponId = coupon.id;
+        discountCents = coupon.discountCents;
       }
 
-      const currentDate = new Date();
+      const totalCents = subtotalCents - discountCents + deliveryChargeCents;
 
-      if (currentDate < coupon.startDate || currentDate > coupon.expiryDate) {
-        throw new AppError(400, "Coupon is not currently valid");
-      }
-
-      if (subtotalCents < toCents(coupon.minOrderAmount.toString())) {
+      if (paymentMethod === PaymentMethod.BKASH && totalCents <= 0n) {
         throw new AppError(
           400,
-          "Minimum order amount not reached for this coupon",
+          "Please select Cash on Delivery for a zero amount order",
         );
       }
 
-      if (coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit) {
-        throw new AppError(400, "Coupon usage limit exceeded");
-      }
+      const order = await tx.order.create({
+        data: {
+          orderNumber,
+          userId: userId ?? null,
+          guestTokenHash,
+          couponId,
+          customerName,
+          customerPhone,
+          deliveryAddress,
+          orderNote: orderNote || null,
+          subtotal: toMoney(subtotalCents),
+          discountAmount: toMoney(discountCents),
+          deliveryCharge: toMoney(deliveryChargeCents),
+          totalAmount: toMoney(totalCents),
 
-      const discountValueCents = toCents(coupon.discountValue.toString());
+          orderItems: {
+            create: orderItems,
+          },
 
-      if (coupon.discountType === DiscountType.PERCENTAGE) {
-        discountCents = (subtotalCents * discountValueCents) / 10000n;
-
-        if (coupon.maxDiscountAmount !== null) {
-          const maxDiscountCents = toCents(coupon.maxDiscountAmount.toString());
-
-          if (discountCents > maxDiscountCents) {
-            discountCents = maxDiscountCents;
-          }
-        }
-      } else if (coupon.discountType === DiscountType.FIXED) {
-        discountCents = discountValueCents;
-      } else if (coupon.discountType === DiscountType.FREE_DELIVERY) {
-        discountCents = deliveryChargeCents;
-      }
-
-      if (discountCents > subtotalCents) {
-        discountCents = subtotalCents;
-      }
-
-      couponId = coupon.id;
-
-      const couponUpdate = await tx.coupon.updateMany({
-        where: {
-          id: coupon.id,
-          ...(coupon.usageLimit !== null && {
-            usedCount: { lt: coupon.usageLimit },
-          }),
+          payments: {
+            create: {
+              amount: toMoney(totalCents),
+              paymentMethod,
+              paymentStatus: PaymentStatus.PENDING,
+            },
+          },
         },
-        data: { usedCount: { increment: 1 } },
+
+        select: {
+          id: true,
+          orderNumber: true,
+          userId: true,
+          customerName: true,
+          customerPhone: true,
+          deliveryAddress: true,
+          orderNote: true,
+          subtotal: true,
+          discountAmount: true,
+          deliveryCharge: true,
+          totalAmount: true,
+          orderStatus: true,
+          createdAt: true,
+
+          orderItems: {
+            select: {
+              id: true,
+              productId: true,
+              productName: true,
+              productPrice: true,
+              quantity: true,
+              subtotal: true,
+            },
+          },
+
+          payments: {
+            orderBy: { createdAt: "desc" },
+            select: {
+              id: true,
+              amount: true,
+              paymentMethod: true,
+              paymentStatus: true,
+              providerPaymentId: true,
+            },
+          },
+        },
       });
 
-      if (couponUpdate.count === 0) {
-        throw new AppError(400, "Coupon usage limit exceeded");
-      }
-    }
-
-    const totalCents = subtotalCents - discountCents + deliveryChargeCents;
-
-    if (paymentMethod === PaymentMethod.BKASH && totalCents <= 0n) {
-      throw new AppError(
-        400,
-        "Please select Cash on Delivery for a zero amount order",
-      );
-    }
-
-    const order = await tx.order.create({
-      data: {
-        orderNumber,
-        userId: userId ?? null,
-        guestTokenHash,
-        couponId,
-        customerName,
-        customerPhone,
-        deliveryAddress,
-        orderNote: orderNote || null,
-        subtotal: toMoney(subtotalCents),
-        discountAmount: toMoney(discountCents),
-        deliveryCharge: toMoney(deliveryChargeCents),
-        totalAmount: toMoney(totalCents),
-        orderItems: { create: orderItems },
-        payments: {
-          create: {
-            amount: toMoney(totalCents),
-            paymentMethod,
-            paymentStatus: PaymentStatus.PENDING,
-          },
-        },
-      },
-      select: {
-        id: true,
-        orderNumber: true,
-        userId: true,
-        customerName: true,
-        customerPhone: true,
-        deliveryAddress: true,
-        orderNote: true,
-        subtotal: true,
-        discountAmount: true,
-        deliveryCharge: true,
-        totalAmount: true,
-        orderStatus: true,
-        createdAt: true,
-        orderItems: {
-          select: {
-            id: true,
-            productId: true,
-            productName: true,
-            productPrice: true,
-            quantity: true,
-            subtotal: true,
-          },
-        },
-        payments: {
-          orderBy: { createdAt: "desc" },
-          select: {
-            id: true,
-            amount: true,
-            paymentMethod: true,
-            paymentStatus: true,
-            providerPaymentId: true,
-          },
-        },
-      },
-    });
-
-    return { ...order, guestToken };
-  });
+      return { ...order, guestToken };
+    },
+    { isolationLevel: "ReadCommitted" },
+  );
 };
 
 // 2. Get all orders
@@ -284,6 +173,7 @@ const GetAllOrders = async (query: IOrderQuery) => {
       skip,
       take: limit,
       orderBy: { createdAt: "desc" },
+
       select: {
         id: true,
         orderNumber: true,
@@ -298,7 +188,11 @@ const GetAllOrders = async (query: IOrderQuery) => {
         orderStatus: true,
         createdAt: true,
         updatedAt: true,
-        _count: { select: { orderItems: true } },
+
+        _count: {
+          select: { orderItems: true },
+        },
+
         payments: {
           orderBy: { createdAt: "desc" },
           select: {
@@ -311,6 +205,7 @@ const GetAllOrders = async (query: IOrderQuery) => {
         },
       },
     }),
+
     prisma.order.count({ where }),
   ]);
 
@@ -329,6 +224,7 @@ const GetAllOrders = async (query: IOrderQuery) => {
 const GetOrderById = async (orderId: string) => {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
+
     select: {
       id: true,
       orderNumber: true,
@@ -344,6 +240,7 @@ const GetOrderById = async (orderId: string) => {
       orderStatus: true,
       createdAt: true,
       updatedAt: true,
+
       orderItems: {
         select: {
           id: true,
@@ -355,6 +252,7 @@ const GetOrderById = async (orderId: string) => {
           createdAt: true,
         },
       },
+
       payments: {
         orderBy: { createdAt: "desc" },
         select: {
@@ -369,6 +267,7 @@ const GetOrderById = async (orderId: string) => {
           updatedAt: true,
         },
       },
+
       coupon: {
         select: {
           id: true,
@@ -403,6 +302,7 @@ const GetMyOrders = async (userId: string, query: IMyOrdersQuery) => {
       skip,
       take: limit,
       orderBy: { createdAt: "desc" },
+
       select: {
         id: true,
         orderNumber: true,
@@ -416,6 +316,7 @@ const GetMyOrders = async (userId: string, query: IMyOrdersQuery) => {
         orderStatus: true,
         createdAt: true,
         updatedAt: true,
+
         orderItems: {
           select: {
             id: true,
@@ -426,6 +327,7 @@ const GetMyOrders = async (userId: string, query: IMyOrdersQuery) => {
             subtotal: true,
           },
         },
+
         payments: {
           orderBy: { createdAt: "desc" },
           select: {
@@ -439,6 +341,7 @@ const GetMyOrders = async (userId: string, query: IMyOrdersQuery) => {
         },
       },
     }),
+
     prisma.order.count({ where }),
   ]);
 
@@ -457,6 +360,7 @@ const GetMyOrders = async (userId: string, query: IMyOrdersQuery) => {
 const GetOrderTracking = async (orderNumber: string) => {
   const order = await prisma.order.findUnique({
     where: { orderNumber },
+
     select: {
       customerName: true,
       customerPhone: true,
@@ -465,6 +369,7 @@ const GetOrderTracking = async (orderNumber: string) => {
       orderStatus: true,
       createdAt: true,
       updatedAt: true,
+
       payments: {
         orderBy: { createdAt: "desc" },
         select: {
@@ -483,7 +388,10 @@ const GetOrderTracking = async (orderNumber: string) => {
 };
 
 const allBkashAttemptsFailed = (
-  payments: { paymentMethod: PaymentMethod; paymentStatus: PaymentStatus }[],
+  payments: {
+    paymentMethod: PaymentMethod;
+    paymentStatus: PaymentStatus;
+  }[],
 ) =>
   payments.length > 0 &&
   payments.every(
@@ -492,6 +400,7 @@ const allBkashAttemptsFailed = (
       payment.paymentStatus === PaymentStatus.FAILED,
   );
 
+// Check payment before changing order status
 const CheckOrderPayment = (
   payments: {
     paymentMethod: PaymentMethod;
@@ -573,7 +482,7 @@ const CheckOrderPayment = (
   }
 };
 
-// 6. Update order status and settle payment on delivery
+// 6. Update order status
 const UpdateOrderStatus = async (
   orderId: string,
   payload: IUpdateOrderStatusInput,
@@ -588,11 +497,13 @@ const UpdateOrderStatus = async (
 
     const existingOrder = await tx.order.findUnique({
       where: { id: orderId },
+
       select: {
         id: true,
         orderNumber: true,
         orderStatus: true,
         totalAmount: true,
+
         payments: {
           select: {
             paymentMethod: true,
@@ -649,6 +560,7 @@ const UpdateOrderStatus = async (
     const order = await tx.order.update({
       where: { id: orderId },
       data: { orderStatus: payload.orderStatus },
+
       select: {
         id: true,
         orderNumber: true,
@@ -673,6 +585,7 @@ const UpdateOrderStatus = async (
                 : [PaymentMethod.CASH_ON_DELIVERY],
           },
         },
+
         data: {
           paymentStatus: PaymentStatus.PAID,
           paidAt: order.updatedAt,
@@ -687,6 +600,7 @@ const UpdateOrderStatus = async (
           orderId,
           paymentStatus: PaymentStatus.PENDING,
         },
+
         data: {
           paymentStatus: PaymentStatus.FAILED,
           checkoutUrl: null,
@@ -713,11 +627,13 @@ const CancelOrder = async (
 
     const existingOrder = await tx.order.findUnique({
       where: { id: orderId },
+
       select: {
         id: true,
         orderNumber: true,
         userId: true,
         orderStatus: true,
+
         payments: {
           select: {
             paymentMethod: true,
@@ -779,6 +695,7 @@ const CancelOrder = async (
         orderId,
         paymentStatus: PaymentStatus.PENDING,
       },
+
       data: {
         paymentStatus: PaymentStatus.FAILED,
         checkoutUrl: null,
@@ -787,6 +704,7 @@ const CancelOrder = async (
 
     return tx.order.findUnique({
       where: { id: orderId },
+
       select: {
         id: true,
         orderNumber: true,
