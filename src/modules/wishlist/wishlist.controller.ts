@@ -72,9 +72,24 @@ const UpdateWishlistStatus: RequestHandler = catchAsync(async (req, res) => {
   });
 });
 
+// Delete wishlist
+const DeleteWishlist: RequestHandler = catchAsync(async (req, res) => {
+  const { id } = req.params;
+
+  const wishlist = await wishlistService.DeleteWishlist(id as string);
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Wishlist deleted successfully",
+    data: wishlist,
+  });
+});
+
 export const wishlistController = {
   CreateWishlist,
   GetAllWishlists,
   GetWishlistById,
   UpdateWishlistStatus,
+  DeleteWishlist,
 };

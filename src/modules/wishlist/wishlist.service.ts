@@ -9,16 +9,40 @@ import type {
   IUpdateWishlistStatusInput,
 } from "./wishlist.interface.ts";
 
+const formatCustomerAddress = (
+  profile: {
+    deliveryAddress: string | null;
+    city: string | null;
+    area: string | null;
+    postalCode: string | null;
+  } | null,
+) => {
+  if (!profile) {
+    return null;
+  }
+
+  const address = [
+    profile.deliveryAddress,
+    profile.area,
+    profile.city,
+    profile.postalCode,
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return address || null;
+};
+
 // 1. Create Wishlist
 const CreateWishlist = async (
   payload: ICreateWishlistInput,
   userId?: string,
 ) => {
-  const { foodName, foodDescription, expectedTime } = payload;
-
   let customerName = payload.customerName;
   let customerPhone = payload.customerPhone;
   let customerEmail = payload.customerEmail;
+
+  let customerAddress = payload.customerAddress ?? null;
 
   // Existing customer
   if (userId) {
@@ -27,30 +51,21 @@ const CreateWishlist = async (
         id: userId,
       },
 
-      select: {
-        name: true,
-        phone: true,
-        email: true,
-        role: true,
-        isActive: true,
+      include: {
+        profile: true,
       },
     });
 
-    if (!user) {
-      throw new AppError(404, "User not found");
-    }
-
-    if (!user.isActive) {
-      throw new AppError(403, "Your account is disabled");
-    }
-
-    if (user.role !== UserRole.CUSTOMER) {
-      throw new AppError(403, "Only customers can create a wishlist");
+    if (!user || !user.isActive || user.role !== UserRole.CUSTOMER) {
+      throw new AppError(403, "Only active customers can submit a wishlist");
     }
 
     customerName = user.name;
     customerPhone = user.phone ?? undefined;
     customerEmail = user.email;
+
+    // Get address from UserProfile
+    customerAddress = formatCustomerAddress(user.profile);
   }
 
   // Guest customer
@@ -58,14 +73,17 @@ const CreateWishlist = async (
     if (!customerName || !customerPhone) {
       throw new AppError(400, "Customer name and phone number are required");
     }
+
+    if (!customerAddress) {
+      throw new AppError(400, "Customer address is required");
+    }
   }
 
-  // Check customer name
   if (!customerName) {
     throw new AppError(400, "Customer name is required");
   }
 
-  // Create Wishlist
+  // Create wishlist
   const wishlist = await prisma.wishlist.create({
     data: {
       userId: userId ?? null,
@@ -73,10 +91,11 @@ const CreateWishlist = async (
       customerName,
       customerPhone: customerPhone ?? null,
       customerEmail: customerEmail ?? null,
+      customerAddress,
 
-      foodName,
-      foodDescription,
-      expectedTime: new Date(expectedTime),
+      foodName: payload.foodName,
+      foodDescription: payload.foodDescription,
+      expectedTime: new Date(payload.expectedTime),
     },
 
     select: {
@@ -85,6 +104,7 @@ const CreateWishlist = async (
       foodDescription: true,
       expectedTime: true,
       status: true,
+      adminNote: true,
       createdAt: true,
     },
   });
@@ -161,10 +181,25 @@ const GetAllWishlists = async (query: IWishlistQuery) => {
 };
 
 // 3. Get Wishlist By ID (Admin)
-const GetWishlistById = async (wishlistId: string) => {
+const GetWishlistById = async (id: string) => {
   const wishlist = await prisma.wishlist.findUnique({
     where: {
-      id: wishlistId,
+      id,
+    },
+
+    include: {
+      user: {
+        select: {
+          profile: {
+            select: {
+              deliveryAddress: true,
+              city: true,
+              area: true,
+              postalCode: true,
+            },
+          },
+        },
+      },
     },
   });
 
@@ -172,9 +207,14 @@ const GetWishlistById = async (wishlistId: string) => {
     throw new AppError(404, "Wishlist not found");
   }
 
-  return wishlist;
-};
+  const { user, ...wishlistData } = wishlist;
 
+  return {
+    ...wishlistData,
+
+    currentProfileAddress: formatCustomerAddress(user?.profile ?? null),
+  };
+};
 // 4. Update Wishlist Status (Admin)
 const UpdateWishlistStatus = async (
   wishlistId: string,
@@ -207,9 +247,26 @@ const UpdateWishlistStatus = async (
   return wishlist;
 };
 
+const DeleteWishlist = async (id: string) => {
+  const result = await prisma.wishlist.deleteMany({
+    where: {
+      id,
+    },
+  });
+
+  if (result.count === 0) {
+    throw new AppError(404, "Wishlist not found");
+  }
+
+  return {
+    id,
+  };
+};
+
 export const wishlistService = {
   CreateWishlist,
   GetAllWishlists,
   GetWishlistById,
   UpdateWishlistStatus,
+  DeleteWishlist,
 };

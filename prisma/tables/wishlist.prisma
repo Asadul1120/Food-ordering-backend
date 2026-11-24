@@ -2,9 +2,10 @@ model Wishlist {
   id     String  @id @default(ulid())
   userId String?
 
-  customerName  String
-  customerPhone String?
-  customerEmail String?
+  customerName    String
+  customerPhone   String?
+  customerEmail   String?
+  customerAddress String?
 
   foodName        String
   foodDescription String

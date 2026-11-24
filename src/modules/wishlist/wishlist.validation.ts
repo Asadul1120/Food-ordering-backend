@@ -46,6 +46,12 @@ export const createWishlistValidationSchema = z
       .email("Invalid email address")
       .max(254)
       .optional(),
+    customerAddress: z
+      .string()
+      .trim()
+      .min(8, "Please enter a valid address")
+      .max(700, "Address is too long")
+      .optional(),
   })
   .strict();
 

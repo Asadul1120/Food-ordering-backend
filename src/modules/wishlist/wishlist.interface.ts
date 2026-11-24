@@ -8,6 +8,7 @@ export interface ICreateWishlistInput {
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
+  customerAddress?: string;
 }
 
 export interface IWishlistQuery {

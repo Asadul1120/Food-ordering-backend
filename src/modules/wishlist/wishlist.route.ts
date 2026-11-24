@@ -5,13 +5,9 @@ import { OptionalAuth } from "../../middleware/OptionalAuth.ts";
 
 import { UserRole } from "../../generated/prisma/enums.ts";
 
-import {
-  validateRequest,
-} from "../../middleware/validateRequest.ts";
+import { validateRequest } from "../../middleware/validateRequest.ts";
 
-import {
-  wishlistController,
-} from "./wishlist.controller.ts";
+import { wishlistController } from "./wishlist.controller.ts";
 
 import {
   createWishlistValidationSchema,
@@ -19,7 +15,6 @@ import {
 } from "./wishlist.validation.ts";
 
 const router = Router();
-
 
 // Create Wishlist (Customer & Guest)
 router.post(
@@ -29,22 +24,11 @@ router.post(
   wishlistController.CreateWishlist,
 );
 
-
 // Get All Wishlists (Admin)
-router.get(
-  "/",
-  Auth(UserRole.ADMIN),
-  wishlistController.GetAllWishlists,
-);
-
+router.get("/", Auth(UserRole.ADMIN), wishlistController.GetAllWishlists);
 
 // Get Wishlist By ID (Admin)
-router.get(
-  "/:id",
-  Auth(UserRole.ADMIN),
-  wishlistController.GetWishlistById,
-);
-
+router.get("/:id", Auth(UserRole.ADMIN), wishlistController.GetWishlistById);
 
 // Update Wishlist Status (Admin)
 router.patch(
@@ -54,5 +38,7 @@ router.patch(
   wishlistController.UpdateWishlistStatus,
 );
 
+// Delete wishlist - Admin
+router.delete("/:id", Auth(UserRole.ADMIN), wishlistController.DeleteWishlist);
 
 export const wishlistRoutes = router;
