@@ -2,9 +2,9 @@ model Order {
   id          String @id @default(ulid())
   orderNumber String @unique
 
-  userId   String?
+  userId         String?
   guestTokenHash String?
-  couponId String?
+  couponId       String?
 
   customerName    String
   customerPhone   String

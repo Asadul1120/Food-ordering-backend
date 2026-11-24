@@ -21,7 +21,13 @@ export interface IUpdateUserStatusInput {
 export interface IUpdateMyProfileInput {
   name?: string;
   phone?: string;
+
+  deliveryAddress?: string | null;
+  city?: string | null;
+  area?: string | null;
+  postalCode?: string | null;
 }
+
 
 export interface IChangePasswordInput {
   currentPassword: string;

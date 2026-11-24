@@ -8,7 +8,9 @@ model User {
   role     UserRole @default(CUSTOMER)
   isActive Boolean  @default(true)
 
-  orders Order[]
+  orders    Order[]
+  profile   UserProfile?
+  wishlists Wishlist[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

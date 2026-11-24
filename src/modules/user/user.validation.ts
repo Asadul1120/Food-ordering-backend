@@ -56,13 +56,17 @@ export const updateUserStatusValidationSchema = z.object({
   isActive: z.boolean(),
 });
 
+
+
+
+
 export const updateMyProfileValidationSchema = z
   .object({
     name: z
       .string()
       .trim()
-      .min(2, "Name must be at least 2 characters")
-      .max(80, "Name cannot exceed 80 characters")
+      .min(2)
+      .max(80)
       .optional(),
 
     phone: z
@@ -70,11 +74,53 @@ export const updateMyProfileValidationSchema = z
       .trim()
       .regex(/^\+?[0-9]{8,15}$/, "Invalid phone number")
       .optional(),
+
+    deliveryAddress: z
+      .string()
+      .trim()
+      .min(8)
+      .max(500)
+      .nullable()
+      .optional(),
+
+    city: z
+      .string()
+      .trim()
+      .min(2)
+      .max(80)
+      .nullable()
+      .optional(),
+
+    area: z
+      .string()
+      .trim()
+      .min(2)
+      .max(100)
+      .nullable()
+      .optional(),
+
+    postalCode: z
+      .string()
+      .trim()
+      .min(3)
+      .max(10)
+      .nullable()
+      .optional(),
   })
   .strict()
-  .refine((data) => Object.keys(data).length > 0, {
-    message: "At least one field is required to update",
-  });
+  .refine(
+    (data) => Object.keys(data).length > 0,
+    {
+      message: "At least one field is required to update",
+    },
+  );
+
+
+
+
+
+
+
 
 export const changePasswordValidationSchema = z
   .object({

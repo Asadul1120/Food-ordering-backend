@@ -86,6 +86,7 @@ const GetUserById = async (userId: string) => {
     where: {
       id: userId,
     },
+
     select: {
       id: true,
       name: true,
@@ -93,6 +94,9 @@ const GetUserById = async (userId: string) => {
       email: true,
       role: true,
       isActive: true,
+
+      profile: true,
+
       createdAt: true,
       updatedAt: true,
     },
@@ -228,7 +232,11 @@ const UpdateMyProfile = async (
     throw new AppError(404, "User not found");
   }
 
-  if (payload.phone && payload.phone !== existingUser.phone) {
+  // Check duplicate phone
+  if (
+    payload.phone &&
+    payload.phone !== existingUser.phone
+  ) {
     const existingPhone = await prisma.user.findUnique({
       where: {
         phone: payload.phone,
@@ -240,19 +248,30 @@ const UpdateMyProfile = async (
     }
   }
 
+  const profileData = {
+    deliveryAddress: payload.deliveryAddress,
+    city: payload.city,
+    area: payload.area,
+    postalCode: payload.postalCode,
+  };
+
   const user = await prisma.user.update({
     where: {
       id: userId,
     },
-    data: {
-      ...(payload.name !== undefined && {
-        name: payload.name,
-      }),
 
-      ...(payload.phone !== undefined && {
-        phone: payload.phone,
-      }),
+    data: {
+      name: payload.name,
+      phone: payload.phone,
+
+      profile: {
+        upsert: {
+          create: profileData,
+          update: profileData,
+        },
+      },
     },
+
     select: {
       id: true,
       name: true,
@@ -260,6 +279,7 @@ const UpdateMyProfile = async (
       email: true,
       role: true,
       isActive: true,
+      profile: true,
       createdAt: true,
       updatedAt: true,
     },

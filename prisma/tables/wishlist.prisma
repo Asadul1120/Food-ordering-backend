@@ -1,0 +1,31 @@
+model Wishlist {
+  id     String  @id @default(ulid())
+  userId String?
+
+  customerName  String
+  customerPhone String?
+  customerEmail String?
+
+  foodName        String
+  foodDescription String
+  expectedTime    DateTime
+
+  status    WishlistStatus @default(PENDING)
+  adminNote String?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("wishlists")
+}
+
+enum WishlistStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}

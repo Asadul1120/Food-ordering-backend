@@ -21,6 +21,13 @@ router.get(
   userController.GetAllUsers,
 );
 
+// Get my profile
+router.get(
+  "/me",
+  Auth(),
+  userController.GetMyProfile,
+);
+
 router.patch(
   "/me",
   Auth(),

@@ -5,17 +5,34 @@ import apiResponse from "../../utils/apiResponse.ts";
 
 import { userService } from "./user.service.ts";
 import { AppError } from "../../utils/AppError.ts";
+import { userQueryValidationSchema } from "./user.validation.ts";
 
-const GetAllUsers: RequestHandler = catchAsync(async (req, res) => {
-  const result = await userService.GetAllUsers(req.query);
+const GetAllUsers: RequestHandler = catchAsync(
+  async (req, res) => {
+    const result = userQueryValidationSchema.safeParse(
+      req.query,
+    );
 
-  apiResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "Users retrieved successfully",
-    data: result,
-  });
-});
+    if (!result.success) {
+      throw new AppError(
+        400,
+        result.error.issues[0]?.message ??
+          "Invalid query parameters",
+      );
+    }
+
+    const users = await userService.GetAllUsers(
+      result.data,
+    );
+
+    apiResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Users retrieved successfully",
+      data: users,
+    });
+  },
+);
 
 const GetUserById: RequestHandler = catchAsync(async (req, res) => {
   const { id } = req.params;
@@ -30,6 +47,25 @@ const GetUserById: RequestHandler = catchAsync(async (req, res) => {
   });
 });
 
+const GetMyProfile: RequestHandler = catchAsync(
+  async (req, res) => {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      throw new AppError(401, "Please login first");
+    }
+
+    const user = await userService.GetUserById(userId);
+
+    apiResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Profile retrieved successfully",
+      data: user,
+    });
+  },
+);
+
 const UpdateUser: RequestHandler = catchAsync(async (req, res) => {
   const { id } = req.params;
 
@@ -42,6 +78,7 @@ const UpdateUser: RequestHandler = catchAsync(async (req, res) => {
     data: user,
   });
 });
+
 
 const UpdateUserStatus: RequestHandler = catchAsync(async (req, res) => {
   const { id } = req.params;
@@ -94,6 +131,7 @@ export const userController = {
   GetUserById,
   UpdateUser,
   UpdateUserStatus,
+  GetMyProfile,
   UpdateMyProfile,
   ChangeMyPassword,
 };

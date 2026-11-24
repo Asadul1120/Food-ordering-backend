@@ -12,6 +12,7 @@ import { productRoutes } from "./modules/product/product.route.ts";
 import { orderRoutes } from "./modules/order/order.route.ts";
 import { paymentRoutes } from "./modules/payment/payment.route.ts";
 import { couponRoutes } from "./modules/coupon/coupon.route.ts";
+import { wishlistRoutes } from "./modules/wishlist/wishlist.route.ts";
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use("/api/v1/products", productRoutes);
 app.use("/api/v1/orders", orderRoutes);
 app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/coupons", couponRoutes);
+app.use("/api/v1/wishlists", wishlistRoutes);
 
 app.use(notFound);
 app.use(globalErrorHandler);

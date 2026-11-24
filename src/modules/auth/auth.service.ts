@@ -35,24 +35,31 @@ const RegisterUser = async (payload: IRegisterInput) => {
 
   const hashedPassword = await hashPassword(password);
 
-  const user = await prisma.user.create({
-    data: {
-      name,
-      phone: phone ?? null,
-      email,
-      password: hashedPassword,
-      role: UserRole.CUSTOMER,
+const user = await prisma.user.create({
+  data: {
+    name,
+    phone: phone ?? null,
+    email,
+    password: hashedPassword,
+    role: UserRole.CUSTOMER,
+    profile: {
+      create: {},
     },
-    select: {
-      id: true,
-      name: true,
-      phone: true,
-      email: true,
-      role: true,
-      isActive: true,
-      createdAt: true,
-    },
-  });
+  },
+
+  select: {
+    id: true,
+    name: true,
+    phone: true,
+    email: true,
+    role: true,
+    isActive: true,
+
+    profile: true,
+
+    createdAt: true,
+  },
+});
 
   const jwtPayload = {
     userId: user.id,
@@ -116,13 +123,19 @@ const GetCurrentUser = async (userId: string) => {
       email: true,
       role: true,
       isActive: true,
+
+      profile: true,
+
       createdAt: true,
       updatedAt: true,
     },
   });
 
   if (!user || !user.isActive) {
-    throw new AppError(401, "User not found or account disabled");
+    throw new AppError(
+      401,
+      "User not found or account disabled",
+    );
   }
 
   return user;
