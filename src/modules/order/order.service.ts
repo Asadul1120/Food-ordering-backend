@@ -357,9 +357,11 @@ const GetMyOrders = async (userId: string, query: IMyOrdersQuery) => {
 };
 
 // 5. Track order
-const GetOrderTracking = async (orderNumber: string) => {
+const GetOrderTracking = async (orderNumber: string, customerPhone: string) => {
   const order = await prisma.order.findUnique({
-    where: { orderNumber },
+    where: {
+      orderNumber,
+    },
 
     select: {
       customerName: true,
@@ -371,7 +373,10 @@ const GetOrderTracking = async (orderNumber: string) => {
       updatedAt: true,
 
       payments: {
-        orderBy: { createdAt: "desc" },
+        orderBy: {
+          createdAt: "desc",
+        },
+
         select: {
           paymentStatus: true,
           paidAt: true,
@@ -380,11 +385,36 @@ const GetOrderTracking = async (orderNumber: string) => {
     },
   });
 
+  // Do not reveal whether an order number exists
+  // if the supplied mobile number is incorrect.
   if (!order) {
-    throw new AppError(404, "Order not found");
+    throw new AppError(
+      404,
+      "Order not found. Please check your order number and mobile number.",
+    );
   }
 
-  return order;
+  // Compare the mobile number with the saved order number
+  const savedPhone = order.customerPhone.trim();
+  const enteredPhone = customerPhone.trim();
+
+  if (savedPhone !== enteredPhone) {
+    throw new AppError(
+      404,
+      "Order not found. Please check your order number and mobile number.",
+    );
+  }
+
+  // Hide part of the mobile number in the public response
+  const maskedPhone =
+    savedPhone.length > 7
+      ? `${savedPhone.slice(0, 4)}****${savedPhone.slice(-3)}`
+      : "****";
+
+  return {
+    ...order,
+    customerPhone: maskedPhone,
+  };
 };
 
 const allBkashAttemptsFailed = (
