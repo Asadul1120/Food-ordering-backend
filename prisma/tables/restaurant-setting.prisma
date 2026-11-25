@@ -1,0 +1,22 @@
+model RestaurantSetting {
+  id             String  @id
+  name           String
+  tagline        String?
+  description    String?
+  logoUrl        String?
+  logoPublicId   String?
+  phone          String?
+  whatsappNumber String?
+  address        String?
+  deliveryArea   String?
+  googleMapsUrl  String?
+  facebookUrl    String?
+  timezone       String  @default("Asia/Dhaka")
+
+  hours RestaurantHour[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("restaurant_settings")
+}

@@ -1,0 +1,12 @@
+model RestaurantHour {
+  restaurantSettingId String
+  dayOfWeek           Int
+  opensAt             String? @db.VarChar(5)
+  closesAt            String? @db.VarChar(5)
+  isClosed            Boolean @default(false)
+
+  restaurantSetting RestaurantSetting @relation(fields: [restaurantSettingId], references: [id], onDelete: Cascade)
+
+  @@id([restaurantSettingId, dayOfWeek])
+  @@map("restaurant_hours")
+}
