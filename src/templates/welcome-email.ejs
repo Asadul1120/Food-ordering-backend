@@ -1,0 +1,146 @@
+<%
+  const customerName = typeof name === 'string' ? name.trim() : '';
+  const customerEmail = typeof email === 'string' ? email.trim() : '';
+  const formattedDate = new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'Asia/Dhaka'
+  }).format(new Date());
+  const siteUrl = 'https://food-ordering-frontend-a.netlify.app';
+%>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <title>Welcome to Side Kitchen</title>
+    <style>
+      @media only screen and (max-width: 600px) {
+        .outer-padding { padding: 16px 10px !important; }
+        .side-padding { padding-left: 20px !important; padding-right: 20px !important; }
+        .hero-title { font-size: 30px !important; line-height: 36px !important; }
+      }
+    </style>
+  </head>
+  <body style="margin:0; padding:0; background-color:#eef4ef; font-family:Arial, Helvetica, sans-serif;">
+    <div style="display:none; max-height:0; max-width:0; overflow:hidden; opacity:0; font-size:1px; line-height:1px; mso-hide:all;">
+      Your Side Kitchen account is ready. Explore the menu and find your first favorite.
+    </div>
+
+    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#eef4ef" style="width:100%; background-color:#eef4ef;">
+      <tr>
+        <td class="outer-padding" align="center" style="padding:32px 14px;">
+          <!--[if mso]><table role="presentation" align="center" width="640" cellspacing="0" cellpadding="0" border="0"><tr><td><![endif]-->
+          <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#ffffff" style="width:100%; max-width:640px; background-color:#ffffff; border-radius:16px; overflow:hidden;">
+
+            <!-- Brand and date -->
+            <tr>
+              <td class="side-padding" bgcolor="#031f14" style="padding:22px 36px; background-color:#031f14; border-radius:16px 16px 0 0;">
+                <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td valign="middle">
+                      <a href="<%= siteUrl %>/" style="font-family:Georgia, 'Times New Roman', serif; font-size:27px; line-height:32px; font-weight:bold; color:#ffffff; text-decoration:none;">
+                        Side Kitchen<span style="color:#ffcc00;">.</span>
+                      </a>
+                    </td>
+                    <td align="right" valign="middle" style="padding-left:12px; color:#c0d6ca; font-family:Arial, Helvetica, sans-serif; font-size:12px; line-height:18px; white-space:nowrap;">
+                      <%= formattedDate %>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Registration confirmation -->
+            <tr>
+              <td class="side-padding" align="center" bgcolor="#f2f8f2" style="padding:33px 36px 30px; background-color:#f2f8f2; border-bottom:1px solid #deebdf;">
+                <table role="presentation" align="center" width="52" border="0" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td align="center" valign="middle" width="52" height="52" bgcolor="#ffcc00" style="width:52px; height:52px; border-radius:50%; background-color:#ffcc00; color:#031f14; font-family:Arial, Helvetica, sans-serif; font-size:26px; font-weight:bold;">
+                      <span aria-hidden="true">&#10003;</span>
+                    </td>
+                  </tr>
+                </table>
+                <h1 class="hero-title" style="margin:16px 0 8px; color:#031f14; font-family:Georgia, 'Times New Roman', serif; font-size:38px; line-height:44px; font-weight:bold;">
+                  Welcome to Side Kitchen!
+                </h1>
+                <p style="margin:0; color:#355749; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:24px;">
+                  Your account is ready. Let&rsquo;s get your first order started.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Personalized welcome -->
+            <tr>
+              <td class="side-padding" style="padding:26px 36px 20px; color:#263b32; font-family:Arial, Helvetica, sans-serif; font-size:16px; line-height:25px;">
+                <p style="margin:0 0 10px;"><strong>Hi <%= customerName || 'there' %>,</strong></p>
+                <p style="margin:0;">
+                  Thanks for joining Side Kitchen. Whether you&rsquo;re in the mood for a good meal or a cup of handcrafted coffee, we&rsquo;ll bring your restaurant and caf&eacute; favorites to your door.
+                </p>
+                <% if (customerEmail) { %>
+                  <p style="margin:12px 0 0; color:#486357; font-size:14px; line-height:22px; overflow-wrap:anywhere;">
+                    You signed up with <strong style="color:#124732;"><%= customerEmail %></strong>.
+                  </p>
+                <% } %>
+              </td>
+            </tr>
+
+            <!-- Getting started -->
+            <tr>
+              <td class="side-padding" style="padding:0 36px 24px;">
+                <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#f6f9f6" style="width:100%; background-color:#f6f9f6; border:1px solid #deebdf; border-radius:12px;">
+                  <tr>
+                    <td style="padding:17px 20px; color:#263b32; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:22px;">
+                      <h2 style="margin:0 0 6px; color:#124732; font-size:16px; line-height:24px;">How to get started</h2>
+                      <ol style="margin:0; padding-left:22px;">
+                        <li>Browse the menu and add your favorites to your cart.</li>
+                        <li>Pay with bKash or choose Cash on Delivery.</li>
+                        <li>Track your order as it makes its way to you.</li>
+                      </ol>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Menu button -->
+            <tr>
+              <td class="side-padding" align="center" style="padding:0 36px 24px;">
+                <table role="presentation" align="center" border="0" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td align="center" bgcolor="#ffcc00" style="background-color:#ffcc00; border-radius:24px; mso-padding-alt:13px 28px;">
+                      <a href="<%= siteUrl %>/foods" style="display:inline-block; padding:13px 28px; mso-padding-alt:0; border-radius:24px; color:#031f14; font-family:Arial, Helvetica, sans-serif; font-size:15px; line-height:22px; font-weight:bold; text-decoration:none;">
+                        Explore the Menu &rarr;
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="side-padding" style="padding:0 36px 26px; color:#263b32; font-family:Arial, Helvetica, sans-serif; font-size:14px; line-height:22px;">
+                Enjoy your first bite,<br />
+                <strong style="color:#124732;">The Side Kitchen Team</strong>
+              </td>
+            </tr>
+
+            <tr>
+              <td class="side-padding" align="center" bgcolor="#f6f9f6" style="padding:20px 36px; background-color:#f6f9f6; border-top:1px solid #deebdf; border-radius:0 0 16px 16px; color:#486357; font-family:Arial, Helvetica, sans-serif; font-size:13px; line-height:20px;">
+                <p style="margin:0 0 4px;">
+                  <a href="<%= siteUrl %>/track-order" style="color:#124732; text-decoration:underline;">Track an order</a>
+                  &nbsp;&middot;&nbsp;
+                  <a href="<%= siteUrl %>/#restaurant-contact" style="color:#124732; text-decoration:underline;">Contact us</a>
+                </p>
+                <p style="margin:0;">You received this email because you signed up for Side Kitchen.</p>
+              </td>
+            </tr>
+          </table>
+          <!--[if mso]></td></tr></table><![endif]-->
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

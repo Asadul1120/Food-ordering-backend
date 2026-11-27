@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="x-apple-disable-message-reformatting" />
+    <title>Your Side Kitchen verification code</title>
+
+    <style>
+      @media only screen and (max-width: 600px) {
+        .email-padding {
+          padding-left: 20px !important;
+          padding-right: 20px !important;
+        }
+
+        .email-title {
+          font-size: 26px !important;
+          line-height: 32px !important;
+        }
+
+        .otp-code {
+          font-size: 30px !important;
+          letter-spacing: 5px !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body style="margin:0; padding:0; background-color:#eef4ef; font-family:Arial, Helvetica, sans-serif;">
+    <div style="display:none; max-height:0; overflow:hidden; opacity:0; mso-hide:all;">
+      Use your one-time code to verify your Side Kitchen email address.
+    </div>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#eef4ef">
+      <tr>
+        <td align="center" style="padding:28px 12px;">
+          <!--[if mso]><table role="presentation" width="600" align="center" cellspacing="0" cellpadding="0" border="0"><tr><td><![endif]-->
+          <table
+            role="presentation"
+            width="100%"
+            cellspacing="0"
+            cellpadding="0"
+            border="0"
+            bgcolor="#ffffff"
+            style="width:100%; max-width:600px; background-color:#ffffff; border-radius:14px; overflow:hidden;"
+          >
+            <!-- Freshlya header -->
+            <tr>
+              <td class="email-padding" bgcolor="#031f14" style="padding:21px 34px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td>
+                      <a
+                        href="https://food-ordering-frontend-a.netlify.app/"
+                        style="font-family:Georgia, 'Times New Roman', serif; color:#ffffff; font-size:27px; font-weight:bold; text-decoration:none;"
+                      >Side Kitchen<span style="color:#ffcc00;">.</span></a>
+                    </td>
+                    <td align="right" style="padding-left:10px; color:#c0d6ca; font-size:12px; white-space:nowrap;">
+                      <%= new Date().toLocaleDateString('en-GB', { timeZone: 'Asia/Dhaka' }) %>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+
+            <!-- Main heading -->
+            <tr>
+              <td class="email-padding" align="center" bgcolor="#f2f8f2" style="padding:26px 34px;">
+                <h1 class="email-title" style="margin:0 0 8px; color:#031f14; font-family:Georgia, 'Times New Roman', serif; font-size:25px; line-height:38px;">
+                  Verify That You Are a Staff  or Admin
+                <p style="margin:0; color:#355749; font-size:15px; line-height:23px;">
+                  One quick step to finish login for Side Kitchen.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Personalized message -->
+            <tr>
+              <td class="email-padding" style="padding:26px 34px 20px; color:#263b32; font-size:15px; line-height:24px;">
+                <p style="margin:0 0 10px;">
+                  <strong>Hi <%= typeof name === 'string' && name.trim() ? name.trim() : 'there' %>,</strong>
+                </p>
+                <p style="margin:0;">
+                  Enter the code below on Side Kitchen to verify your email address.
+                </p>
+                <% if (typeof email === 'string' && email.trim()) { %>
+                  <p style="margin:8px 0 0; color:#486357; font-size:13px; overflow-wrap:anywhere;">
+                    Email address: <strong><%= email.trim() %></strong>
+                  </p>
+                <% } %>
+              </td>
+            </tr>
+
+            <!-- OTP and expiry -->
+            <tr>
+              <td class="email-padding" align="center" style="padding:0 34px 24px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#fff8d8" style="border:1px solid #f0df91; border-radius:10px;">
+                  <tr>
+                    <td align="center" style="padding:17px 12px;">
+                      <p style="margin:0 0 6px; color:#355749; font-size:13px; font-weight:bold;">
+                        Your verification code
+                      </p>
+                      <p class="otp-code" style="margin:0; color:#031f14; font-family:'Courier New', monospace; font-size:36px; line-height:46px; font-weight:bold; letter-spacing:7px;">
+                        <%= otp %>
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin:12px 0 0; color:#355749; font-size:14px; line-height:22px;">
+                  This code expires in
+                  <strong><%= expirationMinutes %> <%= Number(expirationMinutes) === 1 ? 'minute' : 'minutes' %></strong>.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Security message and sign-off -->
+            <tr>
+              <td class="email-padding" style="padding:0 34px 26px; color:#263b32; font-size:14px; line-height:22px;">
+                <p style="margin:0 0 16px;">
+                  Keep this code private. If you didn&rsquo;t request it, you can ignore this email.
+                </p>
+                <p style="margin:0;">
+                  Thanks,<br />
+                  <strong style="color:#124732;">The Side Kitchen Team</strong>
+                </p>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td class="email-padding" align="center" bgcolor="#f6f9f6" style="padding:17px 34px; border-top:1px solid #deebdf; color:#486357; font-size:13px; line-height:20px;">
+                Need help?
+                <a
+                  href="https://food-ordering-frontend-a.netlify.app/#restaurant-contact"
+                  style="color:#124732; text-decoration:underline;"
+                >Contact Side Kitchen</a>
+              </td>
+            </tr>
+          </table>
+          <!--[if mso]></td></tr></table><![endif]-->
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

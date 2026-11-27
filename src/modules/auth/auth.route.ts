@@ -4,6 +4,7 @@ import { authController } from "./auth.controller.ts";
 import {
   loginValidationSchema,
   registerValidationSchema,
+  verifyOtpValidationSchema,
 } from "./auth.validation.ts";
 import Auth from "../../middleware/Auth.ts";
 
@@ -19,6 +20,12 @@ router.post(
   "/login",
   validateRequest(loginValidationSchema),
   authController.Login,
+);
+
+router.post(
+  "/verify-login-otp",
+  validateRequest(verifyOtpValidationSchema),
+  authController.verifyLoginOtp,
 );
 
 router.get("/me", Auth(), authController.getMe);

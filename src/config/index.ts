@@ -27,4 +27,8 @@ export const config = {
   bkash_app_key: process.env.BKASH_APP_KEY,
   bkash_app_secret: process.env.BKASH_APP_SECRET,
   bkash_callback_url: process.env.BKASH_CALLBACK_URL,
+
+  smtp_user: process.env.SMTP_USER,
+  smtp_password: process.env.SMTP_PASSWORD,
+  email_sender: process.env.EMAIL_SENDER,
 };

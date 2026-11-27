@@ -13,3 +13,7 @@ export interface ILoginInput {
 export interface ITokenPayload {
   userId: string;
 }
+export interface IVerifyOtpInput {
+  email: string;
+  otp: string;
+}

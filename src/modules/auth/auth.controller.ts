@@ -43,7 +43,43 @@ const Register: RequestHandler = catchAsync(async (req, res) => {
 });
 
 const Login: RequestHandler = catchAsync(async (req, res) => {
-  const { accessToken, refreshToken, role } = await authService.LoginUser(
+  const result = await authService.LoginUser(req.body);
+
+  
+  // OTP verification required
+  if (result.requiresOtp) {
+    apiResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "OTP verification required",
+      data: result,
+    });
+
+    return;
+  }
+
+  const { accessToken, refreshToken, role } = result;
+
+  res.cookie("accessToken", accessToken, {
+    ...cookieOptions,
+    maxAge: 1000 * 60 * 60 * 24,
+  });
+
+  res.cookie("refreshToken", refreshToken, {
+    ...cookieOptions,
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+  });
+
+  apiResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: "Login successful",
+    data: { accessToken, refreshToken, role },
+  });
+});
+
+const verifyLoginOtp: RequestHandler = catchAsync(async (req, res) => {
+  const { accessToken, refreshToken, role } = await authService.verifyLoginOtp(
     req.body,
   );
 
@@ -114,6 +150,7 @@ const refreshToken: RequestHandler = catchAsync(async (req, res) => {
 export const authController = {
   Register,
   Login,
+  verifyLoginOtp,
   getMe,
   Logout,
   refreshToken,

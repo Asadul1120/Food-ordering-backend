@@ -1,16 +1,24 @@
-import { UserRole } from "../../generated/prisma/enums.ts";
+import { OtpPurpose, UserRole } from "../../generated/prisma/enums.ts";
 import { prisma } from "../../lib/prisma.ts";
 
 import { AppError } from "../../utils/AppError.ts";
 
 import { hashPassword, comparePassword } from "../../utils/password.ts";
+import { sendEmail } from "../../utils/sendEmail.ts";
+import crypto from "crypto";
+
 import {
   createRefreshToken,
   createToken,
   verifyRefreshToken,
 } from "../../utils/token.ts";
 
-import type { IRegisterInput, ILoginInput } from "./auth.interface.ts";
+import type {
+  IRegisterInput,
+  ILoginInput,
+  IVerifyOtpInput,
+} from "./auth.interface.ts";
+import { generateOtp, verifyOtp } from "../../utils/otp.utils.ts";
 
 const RegisterUser = async (payload: IRegisterInput) => {
   const { name, phone, email, password } = payload;
@@ -35,31 +43,40 @@ const RegisterUser = async (payload: IRegisterInput) => {
 
   const hashedPassword = await hashPassword(password);
 
-const user = await prisma.user.create({
-  data: {
-    name,
-    phone: phone ?? null,
-    email,
-    password: hashedPassword,
-    role: UserRole.CUSTOMER,
-    profile: {
-      create: {},
+  const user = await prisma.user.create({
+    data: {
+      name,
+      phone: phone ?? null,
+      email,
+      password: hashedPassword,
+      role: UserRole.CUSTOMER,
+      profile: {
+        create: {},
+      },
     },
-  },
 
-  select: {
-    id: true,
-    name: true,
-    phone: true,
-    email: true,
-    role: true,
-    isActive: true,
+    select: {
+      id: true,
+      name: true,
+      phone: true,
+      email: true,
+      role: true,
+      isActive: true,
 
-    profile: true,
+      profile: true,
 
-    createdAt: true,
-  },
-});
+      createdAt: true,
+    },
+  });
+  await sendEmail({
+    to: user.email,
+    subject: "Welcome to Side Kitchen",
+    templateName: "welcome-email",
+    templateData: {
+      name: user.name,
+      email: user.email,
+    },
+  });
 
   const jwtPayload = {
     userId: user.id,
@@ -97,6 +114,27 @@ const LoginUser = async (payload: ILoginInput) => {
     throw new AppError(401, "Invalid password");
   }
 
+  if (user.role === UserRole.ADMIN || user.role === UserRole.STAFF) {
+    const otpValue = await generateOtp(user.email, OtpPurpose.LOGIN);
+    await sendEmail({
+      to: user.email,
+      subject: "Login for Verify Your Email",
+      templateName: "otp-verification",
+      templateData: {
+        name: user.name,
+        email :user.email,
+        otp: otpValue,
+        expirationMinutes: 5,
+      },
+    });
+
+    return {
+      requiresOtp: true,
+      email: user.email,
+      message: "OTP verification required",
+    };
+  }
+
   const jwtPayload = {
     userId: user.id,
     name: user.name,
@@ -108,6 +146,48 @@ const LoginUser = async (payload: ILoginInput) => {
   const refreshToken = createRefreshToken(jwtPayload);
 
   return { accessToken, refreshToken, role: user.role };
+};
+
+const verifyLoginOtp = async (payload: IVerifyOtpInput) => {
+  const { email, otp } = payload;
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    throw new AppError(401, "Invalid verification request");
+  }
+
+  if (!user.isActive) {
+    throw new AppError(403, "Your account is disabled");
+  }
+
+  if (user.role !== UserRole.ADMIN && user.role !== UserRole.STAFF) {
+    throw new AppError(403, "OTP login is not allowed");
+  }
+
+  const isOtpValid = await verifyOtp(user.email, otp, OtpPurpose.LOGIN);
+
+  if (!isOtpValid) {
+    throw new AppError(400, "Invalid or expired OTP");
+  }
+
+  const jwtPayload = {
+    userId: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  };
+
+  const accessToken = createToken(jwtPayload);
+  const refreshToken = createRefreshToken(jwtPayload);
+
+  return {
+    accessToken,
+    refreshToken,
+    role: user.role,
+  };
 };
 
 const GetCurrentUser = async (userId: string) => {
@@ -132,10 +212,7 @@ const GetCurrentUser = async (userId: string) => {
   });
 
   if (!user || !user.isActive) {
-    throw new AppError(
-      401,
-      "User not found or account disabled",
-    );
+    throw new AppError(401, "User not found or account disabled");
   }
 
   return user;
@@ -176,6 +253,7 @@ const refreshToken = async (refreshToken: string) => {
 export const authService = {
   RegisterUser,
   LoginUser,
+  verifyLoginOtp,
   GetCurrentUser,
   refreshToken,
 };

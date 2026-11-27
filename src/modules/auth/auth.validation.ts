@@ -28,3 +28,11 @@ export const loginValidationSchema = z.object({
   email: z.string().trim().min(8, "Phone number is required"),
   password: z.string().min(1, "Password is required"),
 });
+
+export const verifyOtpValidationSchema = z.object({
+  email: z.string().trim().email("Invalid email address"),
+
+  otp: z.string().regex(/^\d{6}$/, {
+    message: "OTP must be exactly 6 digits",
+  }),
+});

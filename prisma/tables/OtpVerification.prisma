@@ -1,0 +1,19 @@
+enum OtpPurpose {
+  REGISTRATION
+  LOGIN
+  FORGOT_PASSWORD
+  RESET_PASSWORD
+  EMAIL_VERIFICATION
+}
+
+model OtpVerification {
+  id        String     @id @default(cuid())
+  email     String
+  otp       String
+  purpose   OtpPurpose
+  expiresAt DateTime
+  createdAt DateTime   @default(now())
+
+  @@unique([email, purpose])
+  @@index([expiresAt])
+}
